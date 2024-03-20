@@ -3,8 +3,43 @@ Class
     Foam::maneuveringOutput
 
 Description
-    Test
-
+    maneuvering controller for ship 4 different maneuvering motions, which are self-propulsion,
+    turning, zigzag and coursekeeping.
+Usage
+    Minimal example by using \c constant/dynamicMeshDict/maneuvers:
+    \verbatim
+        maneuvers
+        {
+        
+            control1 // self-propulsion controller
+            {
+                type          sailing;
+                refBody       hull;
+                actBody       disk1;
+                controllerP   100;
+                controllerI   1;
+                controllerD   0;
+                controllerTarget   1.34;
+                controllerMax   200;
+                controllerMin   10;
+                outputSignal   5;
+                controllerStartTime   0;
+                controllerEndTime   1000;
+            }
+            
+            control2 // turning controller
+            {
+                type          turning;
+                refBody       hull;
+                actBody       rudder;
+                controllerRudder  35;
+                controllerRate    5;
+                outputSignal     0;
+                controllerStartTime  500;
+                controllerEndTime   1000;
+            }
+        }
+    \endverbatim
 \*---------------------------------------------------------------------------*/
 
 #ifndef Foam_maneuveringOutput_H
