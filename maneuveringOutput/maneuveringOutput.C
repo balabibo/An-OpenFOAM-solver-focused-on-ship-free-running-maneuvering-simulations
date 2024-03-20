@@ -48,37 +48,16 @@ scalar maneuveringOutput::output(const vector2D& input)
 
 void maneuveringOutput::write(Ostream& os) const
 {
-    //os.beginBlock(dictName);
-    //targetValue_->writeData(os);
-   // os.writeEntry("field", maneuveringInput_->fieldName());
 
-    controlMethod_->write(os);
 
-    //os.beginBlock("maneuveringInput");
-    //maneuveringInput_->write(os);
-    //os.endBlock();
-
-    os.endBlock();
 }
 
 void maneuveringOutput::write(dictionary& dict) const
 {
-    //os.beginBlock(dictName);
-    //targetValue_->writeData(os);
-   // os.writeEntry("field", maneuveringInput_->fieldName());
 
-    // entry* enD =
-    // dict.add(controlMethod_->controlName(), dict);
-    // dictionary& enDict = enD->dict();
-    // maneuveringInput_->write(enDict);
-    // controlMethod_->write(enDict);
-    // enD = nullptr;
     dictionary& enDict =dict.subDictOrAdd(controlMethod_->controlName());
     maneuveringInput_->write(enDict);
     controlMethod_->write(enDict);
-    //os.beginBlock("maneuveringInput");
-    //maneuveringInput_->write(os);
-    //os.endBlock();
 
 }
 
