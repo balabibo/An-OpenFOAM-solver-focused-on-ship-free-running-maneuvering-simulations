@@ -30,19 +30,19 @@ Group
     grpRigidBodyDynamicsRestraints
 
 Description
-    Time-dependent external force restraint using Function1.
+    Enforce the oumSource effects on prescribed rigid body
 
 Usage
-    Example applying a constant force to the floatingObject:
+    Example applying a oumSource force to the hull:
     \verbatim
     restraints
     {
-        force
+        sourceforce
         {
             type        sourceForce;
-            body        floatingObject;
-            location    (0 0 0);
-            force       (100 0 0);
+            body        hull;
+            source      disk1;
+            startTime   0;
         }
     }
     \endverbatim
