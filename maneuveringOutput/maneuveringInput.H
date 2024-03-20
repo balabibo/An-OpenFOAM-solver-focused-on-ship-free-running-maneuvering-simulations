@@ -3,8 +3,8 @@ Class
     Foam::maneuveringInput
 
 Description
-    Part of the movingController， which is used to read sailing velocity or 
-yaw angle of parent level mesh.
+    Part of the maneuveringOutput.C， which is used to read sailing velocity or 
+yaw angle of prescribed rigid body.
 
 \*---------------------------------------------------------------------------*/
 
