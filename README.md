@@ -1,6 +1,7 @@
 # An OpenFOAM solver focused on free-running maneuvering simulations
 
 Summary
+
 These modifications are based on the "overInterDyMFoam" solver in OpenFOAM v2206.
 There are several modules which were modified or added, and its the general funtion is realizing the maneuvering motions of ship.
 The tutorial will be updated in the future, due to the great consumption of computational resources.
