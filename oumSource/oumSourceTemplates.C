@@ -31,7 +31,6 @@ License
 #include "fvMesh.H"
 #include "fvMatrix.H"
 #include "volFields.H"
-// #include "IOobject.H"
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
@@ -102,26 +101,13 @@ void Foam::fv::oumSource::calc
     scalar refAlpha = 0;
     scalar Fy = 0;
     scalar Fz = 0;
-    // scalar zB = 0.1;
-    /*
-      Info << "此前源项值： "<< Usource[cells[0]] << endl; // 此处语句会导致程序出错，但表面上看并无问题，放在循环中读取cell[0]也无问题
-    */
     forAll(cells, i)
-    {
-
-      //  Info <<"i = "<< i << "  此前源项值： "<< Usource[cells[i]] << endl;
-    //  if(fabs(meshPosi[cells[i]][0])<zB)
-    //  {
-    //    zB = fabs(meshPosi[cells[i]][0]);
-    //  }
-     
-
+    {    
       refRho = refRho + rho[cells[i]];
       refAlpha = refAlpha + alpha[cells[i]];
       Fy += Usource[cells[i]][1];
       Fz += Usource[cells[i]][2];
     }
-    //  Info<<"x坐标最小为： "<<zB<<endl;
      reduce(refRho, sumOp<scalar>());
      reduce(refAlpha, sumOp<scalar>());
      reduce(Fy, sumOp<scalar>());
@@ -130,8 +116,6 @@ void Foam::fv::oumSource::calc
      refAlpha /= returnReduce(cells_.size(), sumOp<label>());
      
      
-    //  Info << "现在源项值： " << Usource[cells[0]] << endl;
-    //  Info<<"J = "<<refU/(diskRPS_*2*diskR_)<<endl
     Info<<"refRho = "<<refRho<<endl
         <<"refAlpha = "<<refAlpha<<endl
         <<"thrust = "<<thrust<<endl
@@ -146,22 +130,7 @@ void Foam::fv::oumSource::calc
         writeCurrentTime(os);
         os << tab <<thrust<< tab << thrust/(refRho*diskRPS_*diskRPS_*pow(2*diskR_,4))<< tab <<Fy <<tab <<Fz <<endl;      
       }                               
-    
-    /*
-    if
-    (
-        mesh_.time().timeOutputValue() >= writeFileStart_
-     && mesh_.time().timeOutputValue() <= writeFileEnd_
-    )
-    {
-        Ostream& os = file();
-        writeCurrentTime(os);
-
-        os  << Uref << tab << Cp << tab << Ct << tab << a << tab << T
-            << endl;
-    }
-    */  
-    
+        
 }
 
 
