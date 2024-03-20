@@ -4,9 +4,7 @@ Class
 
 Description
     controlMethod is a base class for implementing a control algotirhm
-    used by Regulator. The control algorithm is selected by specifying
-    a "mode" in regulator dict and setting "parameters" dict accordingly
-    to control algorithm implementation.
+    used by maneuveringOutout.C.
 
 \*---------------------------------------------------------------------------*/
 #ifndef controlMethod_H
