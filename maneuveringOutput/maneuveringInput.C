@@ -45,8 +45,8 @@ maneuveringInput::maneuveringInput(const dictionary &dict)
     refBody_(dict.get<word>("refBody")),
     actBody_(dict.get<word>("actBody"))
 {
-    Info<<nl<<"参考刚体为："<<refBody_<<nl
-        <<"作用刚体为："<<actBody_<<endl;
+    Info<<nl<<"reference rigid body："<<refBody_<<nl
+        <<"acting rigid body："<<actBody_<<endl;
 }
 
 
@@ -78,7 +78,7 @@ sailingInput::sailingInput(const dictionary &dict)
 :
     maneuveringInput(dict)
 {
-    Info<<nl<<"该控制方式关注刚体的航速"<<endl;
+  
 }
 
 label sailingInput::inputTypeValue() const
@@ -101,7 +101,7 @@ yawInput::yawInput(const dictionary &dict)
 :
     maneuveringInput(dict)
 {
-    Info<<nl<<"该控制方式关注刚体的首向角"<<endl;
+    
 }
 
 label yawInput::inputTypeValue() const
