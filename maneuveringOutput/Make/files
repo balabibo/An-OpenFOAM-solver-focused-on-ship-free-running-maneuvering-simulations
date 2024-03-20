@@ -1,0 +1,5 @@
+maneuveringInput.C
+controlMethod.C
+maneuveringOutput.C
+
+LIB = $(FOAM_USER_LIBBIN)/libmaneuveringOutput
