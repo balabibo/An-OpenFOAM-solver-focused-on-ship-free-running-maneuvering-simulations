@@ -415,14 +415,6 @@ void Foam::rigidBodyMeshMotion::actControl(const word& actBody, const label& con
     axisX = this->model_.X00(this->model_.bodyID(actBody)).E() & axisX;
     for(label i=0; i< this->model_.nDoF(); i++)
     {
-        /*
-        axisX = this->model_.X00(this->model_.bodyID(actBody)).E() & axisX;
-        Info<<nl<<"model_.v(this->model_.bodyID(actBody), Zero)[controlType] = "<<this->model_.v(this->model_.bodyID(actBody), Zero)[controlType]
-        <<nl<<"model_.state().qDot()[i] = "<<this->model_.state().qDot()[i]
-        <<nl<<"XO = "<<axisX
-        <<endl;
-        */
-
         if (this->model_.v(this->model_.bodyID(actBody), Zero)[controlType] == this->model_.state().qDot()[i]*axisX[0])
         {
             this->model_.state().qDot()[i]
@@ -477,10 +469,8 @@ void Foam::rigidBodyMeshMotion::solve()
     if (bodyIdCofG_ != -1)
     {
         oldPos = model_.cCofR(bodyIdCofG_);
-        forAll(bodyMeshes_, bi)
-        {
-            oldW = model_.wCofR(bodyMeshes_[bi].bodyID_)[2];
-        }
+
+        oldW = model_.wCofR(bodyIdCofG_)[2];
     }
 
     if (test_)
@@ -529,34 +519,6 @@ void Foam::rigidBodyMeshMotion::solve()
             );
         }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /*
-        Info<<nl<<"solve后，模型的速度状态为：  "<<model_.state().qDot()<<endl;
-        Info<<nl<<"solve后，螺旋桨的速度状态为："<<model_.v(model_.bodyID("propeller"),Zero)<<endl;
-        for (label i=0; i< model_.nDoF(); i++)
-        {
-            if(model_.v(model_.bodyID("propeller"),Zero)[0] == model_.state().qDot()[i])
-            {
-               Info<<nl<<"上一步旋转速度为:"<<model_.state0().qDot()[i]<<nl
-                   <<"上一步旋转加速度为:"<<model_.state0().qDdot()[i]<<nl
-                   <<"上一步旋转角度为:"<<model_.state0().q()[i]<<nl               
-               <<endl;
-
-               Info<<nl<<"qDot的第"<<i+1<<"项和螺旋桨的旋转速度相同，其值为： "<<model_.state().qDot()[i]<<endl;
-               Info<<nl<<"现在尝试强行改变其转速为8.9109029"<<endl;
-               model_.state().qDot()[i]=8.9109029;
-               model_.state().qDdot()[i]= (model_.state().qDot()[i]-model_.state0().qDot()[i])/t.deltaTValue();
-               model_.state().q()[i] = (model_.state().qDot()[i]+model_.state0().qDot()[i])*t.deltaTValue()/2 + model_.state0().q()[i];
-               Info<<nl<<"修改后旋转速度为:"<<model_.state().qDot()[i]<<nl
-                   <<"修改后旋转加速度为:"<<model_.state().qDdot()[i]<<nl
-                   <<"修改后旋转角度为:"<<model_.state().q()[i]<<nl
-               <<endl;
-            }
-            model_.forwardDynamicsCorrection(model_.state());
-            
-        }
-        */
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
         forAll(maneuveringOutput_, bi)
         {
             const word refBody = maneuveringOutput_[bi].mInput()->refBody();
@@ -615,15 +577,7 @@ void Foam::rigidBodyMeshMotion::solve()
         scalar presentW(0);
         if (bodyIdCofG_ != -1)
         {
-            forAll(bodyMeshes_, bi)
-            {
-
-                if(bodyMeshes_[bi].parentType_ == "root")
-                {
-                    presentW = model_.wCofR(bodyMeshes_[bi].bodyID_)[2];
-                }
-
-            }
+            presentW = model_.wCofR(bodyIdCofG_)[2];
         }
 
         if (cOfGdisplacement_ != "none")
@@ -747,17 +701,6 @@ bool Foam::rigidBodyMeshMotion::writeObject
     // Force ASCII writing
     streamOpt.format(IOstream::ASCII);
 
-    // const auto& constoutputV =
-    // mesh().lookupObject<uniformDimensionedScalarField>
-    // (
-    //     actBody
-    // );               
-    // constoutputV.regIOobject::writeObject
-    // (
-    // streamOpt,
-    // valid
-    // );
-
     IOdictionary dict
     (
         IOobject
@@ -792,16 +735,7 @@ bool Foam::rigidBodyMeshMotion::writeObject
 
     }
     maneuvers.regIOobject::writeObject(streamOpt, valid);
-/*
-    forAll(model_.joints(), bi)
-    {
-        Info<<nl<<"第"<<bi<<"个joint具有如下自由度及顺序："<<nl;
-        forAll(model_.joints()[bi].S(), ci)
-        {
-            Info<<nl<<"*************************"<<nl<<model_.joints()[bi].S()[ci];
-        }
-    }
-*/
+
     scalarField qNew(bodyMeshes_.size()*6, Zero);
     scalarField qDotNew(bodyMeshes_.size()*6, Zero);
     scalarField qDdotNew(bodyMeshes_.size()*6, Zero);
