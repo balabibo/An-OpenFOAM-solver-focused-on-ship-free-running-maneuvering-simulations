@@ -8,7 +8,7 @@ The tutorial will be updated in the future, due to the great consumption of comp
 
 Functions
   1. Modified the storage structure of rigidBodyState dictionary, which can make change of number of Degree of freedom (Dof) when you modify the dynamicMeshDict in /constant possible.
-  2. add a new solidBody motion "driven3DofMotion" in /src/dynamicMesh/motionSolvers/displacement/solidBody/solidBodyMotionFunctions. It was modified from drivenLinearMotion, and it can realize the folowing roration of background mesh region, which is useful for maneuvering motions like turning or zigzag.
+  2. add a new solidBody motion "driven3DofMotion" in /src/dynamicMesh/motionSolvers/displacement/solidBody/solidBodyMotionFunctions. It was modified from drivenLinearMotion, and it can realize the following rotation of background mesh region, which is useful for maneuvering motions like turning or zigzag.
   3. add a new momentum source method "oumSource" in /src/fvOptions/sources/derived. It is based on blade element momentum theory, and you can find details from the reference, it can be used to replace the real propeller as a propulsion device.
   4. add 4 different maneuvering motions, self-propulsion, turning, zigzag and coursekeeping, for ship. First, it utilize the PID controller to adjust the revolution speed of discretized propeller or momentum source in "sailing" mode, and the PID contorller is also applied to control the rudder motion in "coursekeeping" mode. The rudder controller is used to realize "turning" and "zigzag" maneuvering motions.
 
