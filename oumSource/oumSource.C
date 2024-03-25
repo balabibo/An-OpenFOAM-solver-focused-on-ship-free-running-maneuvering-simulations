@@ -118,8 +118,8 @@ Foam::fv::oumSource::oumSource
     Info << tab << "- creating actuation disk zone: " << this->name() << endl;
 
     
-    // select cells forming part of the bodyforce disk
-    updateCells();
+    // update cells and position of the virtual disk
+    update();
 
     static uniformDimensionedSymmTensorField ffx
     (
