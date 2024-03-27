@@ -408,18 +408,16 @@ const vector2D Foam::rigidBodyMeshMotion::acquireInput(const word &refBody)
 
 }
 
-void Foam::rigidBodyMeshMotion::actControl(const word& actBody, const label& controlType, const scalar& output)
+void Foam::rigidBodyMeshMotion::actControl(const word& actBody, const word& refBody, const label& controlType, const scalar& output)
 {
 
-    vector axisX(1, 0, 0);
-    axisX = this->model_.X00(this->model_.bodyID(actBody)).E() & axisX;
     for(label i=0; i< this->model_.nDoF(); i++)
     {
-        if (this->model_.v(this->model_.bodyID(actBody), Zero)[controlType] == this->model_.state().qDot()[i]*axisX[0])
+        if ((model_.v(model_.bodyID(actBody), Zero)[controlType] - model_.v(model_.bodyID(refBody), Zero)[controlType]) == model_.state().qDot()[i])
         {
-            this->model_.state().qDot()[i]
+            model_.state().qDot()[i]
             =
-            output;
+            output - model_.v(model_.bodyID(refBody), Zero)[controlType];
 
             Info<<nl<<"*****************"<<"outputControl = "<<output<<"*************"<<endl;
 
@@ -533,7 +531,7 @@ void Foam::rigidBodyMeshMotion::solve()
                     meshFlag = false;
                     Info<<nl<<"*******************************"<<nl<<"Current Ref speed: "<<this->acquireInput(refBody)
                         <<nl<<"*******************************"<<endl;
-                    this->actControl(actBody, controlType, output);
+                    this->actControl(actBody, refBody, controlType, output);
                 }
             }
 
