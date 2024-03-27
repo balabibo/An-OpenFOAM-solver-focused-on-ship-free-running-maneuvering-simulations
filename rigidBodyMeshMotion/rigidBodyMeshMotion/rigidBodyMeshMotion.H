@@ -187,7 +187,7 @@ public:
         const vector2D acquireInput(const word& refBody);
 
         //- alter the motions of objective rigid body
-        void actControl(const word& actBody, const label& controlType, const scalar& output);
+        void actControl(const word& actBody, const word& refBody, const label& controlType, const scalar& output);
 
         //- Solve for motion
         virtual void solve();
