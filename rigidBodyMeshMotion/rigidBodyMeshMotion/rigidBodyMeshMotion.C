@@ -163,8 +163,6 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
             )
         );
         maneuversDict = maneuvers;
-
-        Info<<nl<<"*********************"<<nl<<"reading maneuvers dictionary!"<<nl<<maneuversDict<<endl;
     }
 
     static PtrList<uniformDimensionedScalarField> outputValue_;
@@ -407,63 +405,7 @@ const vector2D Foam::rigidBodyMeshMotion::acquireInput(const word &refBody)
 
 void Foam::rigidBodyMeshMotion::actControl(const word& actBody, const word& refBody, const label& controlType, const scalar& output)
 {
-    // vector axisX(1, 0, 0);
-    // axisX = this->model_.X00(this->model_.bodyID(actBody)).E() & axisX;
-
-
-    // label sumJoint = 0;
-    // label serialDoF = 0;
     
-    // forAll(bodyMeshes_, bi)
-    // {
-    //     sumJoint += model_.countJoint()[bi+1];
-    //     if(bodyMeshes_[bi].name_ == actBody)
-    //     {
-    //         forAll(model_.joints()[].S(), ji)
-    //         {
-
-    //         }
-    //     }
-    // }
-
-
-
-
-    
-    // Info<<nl<<"********"<<"now writing ......"<<endl;
-    // for(label i=1; i< model_.countJoint().size(); i++) // i代表第i个bodyMesh
-    // {
-    //     Info<<nl<<"第"<<i<<"个bodymesh的joint数量为"<<this->countJoint()[i]<<nl
-    //     <<",其各joint的情况分别为："
-    //     <<endl;
-    //     sumJoint += this->countJoint()[i];
-    //     for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j代表joint的序号
-    //     {
-    //         Info<<nl<<"第"<<j<<"个joint属于第"<<i<<"个bodymesh，其自由度分布为："<<this->joints()[j].S()<<endl;
-    //         forAll(this->joints()[j].S(), bi)
-    //         {
-    //             label whichDoF = 0;
-
-    //             for(whichDoF=0; whichDoF<6; whichDoF++)
-    //             {
-    //                 if(this->joints()[j].S()[bi][whichDoF] == 1)
-    //                 {                        
-    //                     break;
-    //                 }
-    //             }
-
-    //             qNew[6*i-6 + whichDoF] = qOld[serialDoF];
-    //             qDotNew[6*i-6 + whichDoF] = qDotOld[serialDoF];
-    //             qDdotNew[6*i-6 + whichDoF] = qDdotOld[serialDoF];
-    //             serialDoF++;
-    //         }
-
-
-    //     }
-
-    // }
-
-
     for(label i=0; i< model_.nDoF(); i++)
     {
         
@@ -593,8 +535,6 @@ void Foam::rigidBodyMeshMotion::solve()
                 if(model_.name(i) == actBody)
                 {
                     meshFlag = false;
-                    Info<<nl<<"*******************************"<<nl<<"Current Ref speed: "<<this->acquireInput(refBody)
-                        <<nl<<"*******************************"<<endl;
                     this->actControl(actBody, refBody, controlType, output);
                 }
             }
