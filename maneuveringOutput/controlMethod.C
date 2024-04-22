@@ -97,7 +97,8 @@ turningControl::turningControl(const dictionary &dict)
 scalar turningControl::calculate(scalar currentYaw, const scalar deltaT)
 {
     Info<<nl<<"turningControl is running!!"<<nl;
-    if(abs(outputSignal_) >= abs(cMax_)*M_PI/180)
+
+    if(fabs(outputSignal_) >= fabs(cMax_)*M_PI/180)
     {
        outputSignal_ = cMax_*M_PI/180;
        //return outputSignal_;
@@ -142,28 +143,28 @@ zigzagControl::zigzagControl(const dictionary &dict)
 scalar zigzagControl::calculate(scalar currentYaw, const scalar deltaT)
 {
     Info<<nl<<"zigzagControl is running!!"<<nl;
-    if(oldYaw_ < abs(cTarget_) && currentYaw >= abs(cTarget_))
+    if(oldYaw_ < fabs(cTarget_) && currentYaw >= fabs(cTarget_))
     {
-       cRate_ = -1*abs(cRate_);
+       cRate_ = -1*fabs(cRate_);
     }
        
-    else if(oldYaw_ > -1*abs(cTarget_) && currentYaw <= -1*abs(cTarget_))
+    else if(oldYaw_ > -1*fabs(cTarget_) && currentYaw <= -1*fabs(cTarget_))
     {
-       cRate_ = abs(cRate_);      
+       cRate_ = fabs(cRate_);      
     } 
        
     outputSignal_ += cRate_*deltaT;
     
-    if(outputSignal_ >= abs(cMax_))
+    if(outputSignal_ >= fabs(cMax_))
     {
-       outputSignal_ = abs(cMax_);
+       outputSignal_ = fabs(cMax_);
        oldYaw_ = currentYaw;
        return 0.0;    
     }
     
-    else if(outputSignal_ <= -1*abs(cMax_))
+    else if(outputSignal_ <= -1*fabs(cMax_))
     {
-       outputSignal_ = -1*abs(cMax_);
+       outputSignal_ = -1*fabs(cMax_);
        oldYaw_ = currentYaw;
        return 0.0;        
     }
@@ -272,8 +273,8 @@ coursekeepingControl::coursekeepingControl(const dictionary &dict)
     D_(dict.getOrDefault<scalar>("controllerD", 0.)),
     cTarget_(dict.getOrDefault<scalar>("controllerTarget", 0.)),
     cRate_(dict.getOrDefault<scalar>("controllerRate", 5.)),
-    outputMax_(dict.getOrDefault<scalar>("controllerMax", 35.)),// maximum rudder rate
-    outputMin_(dict.getOrDefault<scalar>("controllerMin", -35.)),//minimum rudder rate
+    outputMax_(dict.getOrDefault<scalar>("controllerMax", 35.)),//最大舵速
+    outputMin_(dict.getOrDefault<scalar>("controllerMin", -35.)),//最小舵速
     errorMax_(16.),
     integralErrorMax_(VGREAT),
     oldError_(dict.getOrDefault<scalar>("oldError", 0.)),
@@ -294,10 +295,10 @@ scalar coursekeepingControl::calculate(scalar currentYaw, scalar deltaT)
     // Calculate increased output RPS value
 
     scalar increasedOutputSignal = P_*error + I_*errorIntegral_ + D_*errorDifferential;
-    const scalar deltaMax = abs(deltaT*cRate_);
-    if(abs(increasedOutputSignal)>= deltaMax)
+    const scalar deltaMax = fabs(deltaT*cRate_);
+    if(fabs(increasedOutputSignal)>= deltaMax)
     {
-      increasedOutputSignal = increasedOutputSignal/(abs(increasedOutputSignal)+VSMALL)*deltaMax;
+      increasedOutputSignal = increasedOutputSignal/(fabs(increasedOutputSignal)+VSMALL)*deltaMax;
     }
     //outputSignal_ += increasedOutputSignal;
     outputSignal_ = increasedOutputSignal/deltaT;
