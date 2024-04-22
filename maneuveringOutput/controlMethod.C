@@ -272,8 +272,8 @@ coursekeepingControl::coursekeepingControl(const dictionary &dict)
     D_(dict.getOrDefault<scalar>("controllerD", 0.)),
     cTarget_(dict.getOrDefault<scalar>("controllerTarget", 0.)),
     cRate_(dict.getOrDefault<scalar>("controllerRate", 5.)),
-    outputMax_(dict.getOrDefault<scalar>("controllerMax", 35.)),//
-    outputMin_(dict.getOrDefault<scalar>("controllerMin", -35.)),//
+    outputMax_(dict.getOrDefault<scalar>("controllerMax", 35.)),// maximum rudder rate
+    outputMin_(dict.getOrDefault<scalar>("controllerMin", -35.)),//minimum rudder rate
     errorMax_(16.),
     integralErrorMax_(VGREAT),
     oldError_(dict.getOrDefault<scalar>("oldError", 0.)),
