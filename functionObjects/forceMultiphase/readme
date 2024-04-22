@@ -1,0 +1,2 @@
+a post-processing module for ship, it can monitor the forces and moments only acted on water phase or air phase, to avoid additional effects from superstructure. 
+In fact, that superstructure would not be installed in model tests sometimes.
