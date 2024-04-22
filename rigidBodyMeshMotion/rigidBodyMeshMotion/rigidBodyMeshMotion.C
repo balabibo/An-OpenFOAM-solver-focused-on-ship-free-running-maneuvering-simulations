@@ -123,6 +123,7 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
     (
         Function1<scalar>::NewIfPresent("ramp", coeffDict(), word::null, &mesh)
     ),
+    rampTime_(coeffDict().getOrDefault<scalar>("rampTime", 0)),
     curTimeIndex_(-1),
     cOfGdisplacement_
     (
@@ -163,6 +164,8 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
             )
         );
         maneuversDict = maneuvers;
+
+        Info<<nl<<"*********************"<<nl<<"reading maneuvers dictionary!"<<nl<<maneuversDict<<endl;
     }
 
     static PtrList<uniformDimensionedScalarField> outputValue_;
@@ -351,13 +354,55 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
             )
         );
         Ostream& os = bodyMotionsOs_[bi].file();
-        os<<nl<<"Time"<<tab;
+        os<<"Time"<<tab;
         for(label i =1; i<= 6; i++)
             os<<"x"<<i<<tab;
         for(label i =1; i<= 6; i++)
             os<<"v"<<i<<tab;
         for(label i =1; i<= 6; i++)
             os<<"a"<<i<<tab;
+        os<<endl;
+    }
+    
+    forAll(bodyMeshes_, bi)
+    {
+        dictionary forcesDict;
+        forcesDict.add("type", functionObjects::forceMultiphase::typeName);
+        forcesDict.add("patches", bodyMeshes_[bi].patches_);
+        forcesDict.add("phase", "water");
+        forcesDict.add("CofR", vector::zero);
+        // forcesDict.add("writeControl", "timeStep");
+        // forcesDict.add("timeInterval", 1);
+
+        forceFile_.append
+        (
+            new functionObjects::forceMultiphase
+            (
+                bodyMeshes_[bi].name_,
+                db(),
+                forcesDict
+            )
+
+        );
+
+        bodyDynamicsOs_.append
+        (
+            new functionObjects::writeFile
+            (
+                mesh,
+                bodyMeshes_[bi].name_ + "Dynamics",
+                bodyMeshes_[bi].name_ + "Dynamics",
+                dict
+            )
+        );
+        Ostream& os = bodyDynamicsOs_[bi].file();
+        os<<"Time"<<tab<<"wettedArea"<<tab;
+        for(label i =1; i<= 6; i++)
+            os<<"total"<<i<<tab;
+        for(label i =1; i<= 6; i++)
+            os<<"pressure"<<i<<tab;
+        for(label i =1; i<= 6; i++)
+            os<<"viscous"<<i<<tab;
         os<<endl;
     }
 
@@ -405,28 +450,87 @@ const vector2D Foam::rigidBodyMeshMotion::acquireInput(const word &refBody)
 
 void Foam::rigidBodyMeshMotion::actControl(const word& actBody, const word& refBody, const label& controlType, const scalar& output)
 {
+    // vector axisX(1, 0, 0);
+    // axisX = this->model_.X00(this->model_.bodyID(actBody)).E() & axisX;
+
+
+    // label sumJoint = 0;
+    // label serialDoF = 0;
     
-    for(label i=0; i< model_.nDoF(); i++)
+    // forAll(bodyMeshes_, bi)
+    // {
+    //     sumJoint += model_.countJoint()[bi+1];
+    //     if(bodyMeshes_[bi].name_ == actBody)
+    //     {
+    //         forAll(model_.joints()[].S(), ji)
+    //         {
+
+    //         }
+    //     }
+    // }
+
+
+    label positionDof = 0;
+    forAll(bodyMeshes_, bi)
     {
-        
-        if ((model_.v(model_.bodyID(actBody), Zero)[controlType] - model_.v(model_.bodyID(refBody), Zero)[controlType]) == model_.state().qDot()[i])
+        if(bodyMeshes_[bi].name_ == actBody)
         {
-            // model_.state().qDot()[i]
-            // =
-            // output - model_.v(model_.bodyID(refBody), Zero)[controlType];
-            
-            model_.state().qDot()[i] = output;
+            positionDof = bi+1;
+            Info<<nl<<""<<model_.state().qDot()[model_.detailDof(positionDof)[controlType]]<<endl;
+            model_.state().qDot()[model_.detailDof(positionDof)[controlType]] = output;
+
             Info<<nl<<"*****************"<<"outputControl = "<<output<<"*************"<<endl;
 
-            model_.state().qDdot()[i] 
+            model_.state().qDdot()[model_.detailDof(positionDof)[controlType]] 
             = 
-            (model_.state().qDot()[i] - model_.state0().qDot()[i])/mesh().time().deltaTValue();
+            (model_.state().qDot()[model_.detailDof(positionDof)[controlType]] - model_.state0().qDot()[model_.detailDof(positionDof)[controlType]])/mesh().time().deltaTValue();
 
-            model_.state().q()[i]
+            model_.state().q()[model_.detailDof(positionDof)[controlType]]
             = 
-            (model_.state().qDot()[i] + model_.state0().qDot()[i]) * mesh().time().deltaTValue()/2.0 + model_.state0().q()[i];
+            (model_.state().qDot()[model_.detailDof(positionDof)[controlType]] + model_.state0().qDot()[model_.detailDof(positionDof)[controlType]]) * mesh().time().deltaTValue()/2.0 + model_.state0().q()[model_.detailDof(positionDof)[controlType]];
         }
+        
     }
+
+
+
+    // for(label i=0; i< model_.nDoF(); i++)
+    // {
+        
+        
+    //     if ((model_.v(model_.bodyID(actBody), Zero)[controlType] - model_.v(model_.bodyID(refBody), Zero)[controlType]) == model_.state().qDot()[i])
+    //     {
+    //         // model_.state().qDot()[i]
+    //         // =
+    //         // output - model_.v(model_.bodyID(refBody), Zero)[controlType];
+            
+    //         model_.state().qDot()[i] = output;
+    //         Info<<nl<<"*****************"<<"outputControl = "<<output<<"*************"<<endl;
+
+    //         model_.state().qDdot()[i] 
+    //         = 
+    //         (model_.state().qDot()[i] - model_.state0().qDot()[i])/mesh().time().deltaTValue();
+
+    //         model_.state().q()[i]
+    //         = 
+    //         (model_.state().qDot()[i] + model_.state0().qDot()[i]) * mesh().time().deltaTValue()/2.0 + model_.state0().q()[i];
+    //     }
+    // }
+
+    // Info<<nl<<"lambda = "<<model_.lambda()
+    //     <<nl<<"bodyID = "<<model_.hbsize()
+    //     <<nl<<model_.countJoint()<<endl;
+    //     forAll(model_.joints(), bi)
+    //     {
+    //         Info<<nl<<model_.joints()[bi].S().size()<<endl;
+    //     }
+
+    // Info<<nl<<"current rudder v  ref 0 = "<<model_.v(model_.bodyID(actBody), Zero)<<nl
+    //     <<"current rudder v = "<<model_.v(model_.bodyID(actBody))<<nl
+    //     <<"Current hull v  ref 0 ="<<model_.v(model_.bodyID(refBody), Zero)<<nl
+    //     <<"Current hull v ="<<model_.v(model_.bodyID(refBody))<<nl
+    //     <<"difference is "<<model_.v(model_.bodyID(actBody), Zero)[controlType] - model_.v(model_.bodyID(refBody), Zero)[controlType]<<nl
+    //     <<"Current model.state().qDot ="<<model_.state().qDot()<<endl;
     model_.forwardDynamicsCorrection(model_.state());
 
 }
@@ -491,37 +595,66 @@ void Foam::rigidBodyMeshMotion::solve()
             );
         }
     }
-    else
+    else 
     {
-        const label nIter(coeffDict().getOrDefault<label>("nIter", 1));
-        for (label i=0; i<nIter; i++)
+        if (t.value() >= rampTime_)
         {
-            Field<spatialVector> fx(model_.nBodies(), Zero);
-            forAll(bodyMeshes_, bi)
+            const label nIter(coeffDict().getOrDefault<label>("nIter", 1));
+            for (label i=0; i<nIter; i++)
             {
-                const label bodyID = bodyMeshes_[bi].bodyID_;
-                dictionary forcesDict;
-                forcesDict.add("type", functionObjects::forces::typeName);
-                forcesDict.add("patches", bodyMeshes_[bi].patches_);
-                forcesDict.add("rhoInf", rhoInf_);
-                forcesDict.add("rho", rhoName_);
-                forcesDict.add("CofR", vector::zero);
+                Field<spatialVector> fx(model_.nBodies(), Zero);
+                if(db().foundObject<volScalarField> ("p_rgh"))
+                {
+                    forAll(bodyMeshes_, bi)
+                    {
+                        const label bodyID = bodyMeshes_[bi].bodyID_;
+                        dictionary forcesDict;
+                        forcesDict.add("type", functionObjects::forceMultiphase::typeName);
+                        forcesDict.add("patches", bodyMeshes_[bi].patches_);
+                        // forcesDict.add("p", "p"); // p is the default value in fact
+                        forcesDict.add("phase", "water");
+                        forcesDict.add("CofR", vector::zero);
 
-                functionObjects::forces f("forces", db(), forcesDict);
-                f.calcForcesMoments();
+                        functionObjects::forceMultiphase f("flow on rigid body", db(), forcesDict);
+                        
+                        f.calcForcesMoments();
 
-                fx[bodyID] = ramp*spatialVector(f.momentEff(), f.forceEff());
+                        fx[bodyID] = ramp*spatialVector(f.momentEff(), f.forceEff());
+                    }
+                    
+                }
+                else
+                {
+                    forAll(bodyMeshes_, bi)
+                    {
+                        const label bodyID = bodyMeshes_[bi].bodyID_;
+                        dictionary forcesDict;
+                        forcesDict.add("type", functionObjects::forces::typeName);
+                        forcesDict.add("patches", bodyMeshes_[bi].patches_);
+                        forcesDict.add("rhoInf", rhoInf_);
+                        forcesDict.add("rho", rhoName_);
+                        forcesDict.add("CofR", vector::zero);
+
+                        functionObjects::forces f("forces", db(), forcesDict);
+                        f.calcForcesMoments();
+
+                        fx[bodyID] = ramp*spatialVector(f.momentEff(), f.forceEff());
+                    }
+                }
+                
+                model_.solve
+                (
+                    t.value(),
+                    t.deltaTValue(),
+                    scalarField(model_.nDoF(), Zero),
+                    fx
+                );
             }
-
-            model_.solve
-            (
-                t.value(),
-                t.deltaTValue(),
-                scalarField(model_.nDoF(), Zero),
-                fx
-            );
         }
-
+        else
+        {
+            Info<<nl<<"Current time = "<<t.value()<<" is lower than ramp time = "<<rampTime_<<", its motion is restrained"<<endl;
+        }
 
         forAll(maneuveringOutput_, bi)
         {
@@ -535,6 +668,8 @@ void Foam::rigidBodyMeshMotion::solve()
                 if(model_.name(i) == actBody)
                 {
                     meshFlag = false;
+                    //Info<<nl<<"*******************************"<<nl<<"Current Ref speed: "<<this->acquireInput(refBody)
+                    //    <<nl<<"*******************************"<<endl;
                     this->actControl(actBody, refBody, controlType, output);
                 }
             }
@@ -613,9 +748,9 @@ void Foam::rigidBodyMeshMotion::solve()
 
                     // disp.value() += model_.cCofR(bodyIdCofG_) - oldPos;
                     disp.value() += presentPos - oldPos;
-                    Info<<nl<<"presentPos = "<<presentPos<<nl
-                        <<"oldPos = "<<oldPos<<nl
-                        <<"disp.value() = "<<disp.value()<<endl;
+                    // Info<<nl<<"presentPos = "<<presentPos<<nl
+                    //     <<"oldPos = "<<oldPos<<nl
+                    //     <<"disp.value() = "<<disp.value()<<endl;
                 }
 
                 if
@@ -647,6 +782,63 @@ void Foam::rigidBodyMeshMotion::solve()
         }
     }
 
+    forAll(forceFile_, bk)
+    {
+        /******************************************
+        For two coordinates, the forces F and moemnts M (= r ^F) were expressed in one of them, you want to covert to another one, i.e., F' and M'
+        you need some transformation information between two coordinates, such as rotation tensor A and translation vector P.
+            For forces, F' = A & F,
+            For moments, M' = (A & (r + P)) ^ (A & F) = A & (r ^ F + P ^ F) = A & (M + P ^ F)
+        where rotation matrix and translation vector should be caculated according to the expression of the position of the new one in primitive one.
+        but for fulfill the define spatialTransform::dual & spatialVector, the P was set to its opposite vector
+        
+        ******************************************/
+        forceFile_[bk].calcForcesMoments();
+
+        // for appendeges, express its forces and moments in its parent rigid body reference frame, if there is only one parent rigid
+        //- for multi parent rigid body, it needs to be modified later.
+        vector translation = model_.cCofR(model_.lambda()[bodyMeshes_[bk].bodyID_]); 
+        // vector translation = model_.cCofR(bodyMeshes_[bk].bodyID_); 
+        // Info<<nl<<"translation = "<<translation<<endl;
+
+        scalar rotationA = 0.0;
+        if
+        (
+            db().time().foundObject<uniformDimensionedVectorField>
+            (
+                cOfGdisplacement_ + "3Dof"
+            )
+        )
+        {
+            auto& rotationRef = db().time().lookupObject<uniformDimensionedVectorField>(cOfGdisplacement_ + "3Dof");
+            rotationA = -1.0*rotationRef.value()[2]; // 
+        }
+        tensor rotationMatrix(cos(rotationA), -1*sin(rotationA), 0, sin(rotationA), cos(rotationA), 0, 0, 0, 1);
+        spatialTransform transformDual(rotationMatrix, translation);
+        
+        spatialVector totalFM = spatialTransform::dual(transformDual) & spatialVector(forceFile_[bk].momentEff(), forceFile_[bk].forceEff());
+        spatialVector pressFM = spatialTransform::dual(transformDual) & spatialVector(forceFile_[bk].pressureMomentEff(), forceFile_[bk].pressureForceEff());
+        spatialVector viscoFM = spatialTransform::dual(transformDual) & spatialVector(forceFile_[bk].viscousMomentEff(), forceFile_[bk].viscousForceEff());
+
+        scalar patchArea =  forceFile_[bk].patchArea();
+        
+        // spatialVector totalFMM = spatialTransform::dual(model_.X0(bodyMeshes_[bk].bodyID_)) & spatialVector(forceFile_[bk].momentEff(), forceFile_[bk].forceEff());
+        if (Pstream::master() && model_.report())
+        {
+            Ostream& os = bodyDynamicsOs_[bk].file();
+            bodyDynamicsOs_[bk].writeCurrentTime(os);
+            os<<tab<<patchArea<<tab;
+            for(label i =0; i< 6; i++)
+                os<<totalFM[i]<<tab;
+            for(label i =0; i< 6; i++)
+                os<<pressFM[i]<<tab;
+            for(label i =0; i< 6; i++)
+                os<<viscoFM[i]<<tab;
+            os<<endl;
+        }
+    }
+   
+
     if (Pstream::master() && model_.report())
     {
     
@@ -673,7 +865,7 @@ void Foam::rigidBodyMeshMotion::solve()
                 os<<qDdotNew[i]<<tab;
             os<<endl;
         }
-    
+
         
     }
 
@@ -746,13 +938,16 @@ bool Foam::rigidBodyMeshMotion::writeObject
         )
     );
 
-    forAll(maneuveringOutput_, bi)
+    if(maneuveringOutput_.size())
     {
-        maneuveringOutput_[bi].write(maneuvers);
+        forAll(maneuveringOutput_, bi)
+        {
+            maneuveringOutput_[bi].write(maneuvers);
 
+        }
+        maneuvers.regIOobject::writeObject(streamOpt, writeOnProc);
     }
-    maneuvers.regIOobject::writeObject(streamOpt, writeOnProc);
-
+    
     scalarField qNew(bodyMeshes_.size()*6, Zero);
     scalarField qDotNew(bodyMeshes_.size()*6, Zero);
     scalarField qDdotNew(bodyMeshes_.size()*6, Zero);

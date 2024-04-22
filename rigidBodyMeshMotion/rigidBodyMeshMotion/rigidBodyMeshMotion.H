@@ -49,6 +49,7 @@ SourceFiles
 #include "ramp.H"
 #include "maneuveringOutput.H"
 #include "writeFile.H"
+#include "forceMultiphase.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -137,6 +138,9 @@ class rigidBodyMeshMotion
         //- Ramp the forces according to the specified function and period
         autoPtr<Function1<scalar>> ramp_;
 
+        //-Ramp time for rigid body motion, avoiding the initial crush of simulations
+        scalar rampTime_;
+
         //- Current time index (used for updating)
         label curTimeIndex_;
 
@@ -147,8 +151,21 @@ class rigidBodyMeshMotion
         // label bodyIdCofG_;
         //- Name of the body to write CofG displacement
         word bodyIdCofG_;
-
+        
+        //-output rigid body motions for post-processing 
         PtrList<functionObjects::writeFile> bodyMotionsOs_;
+
+        //-output forces and moments acted on rigid body for post-processing 
+        PtrList<functionObjects::writeFile> bodyDynamicsOs_;
+
+        // //-output forces acted on rigid body for post-processing 
+        // PtrList<functionObjects::writeFile> bodyForceOs_;
+
+        // //-output moments acted on rigid body for post-processing 
+        // PtrList<functionObjects::writeFile> bodyMomentOs_;
+
+        //-forces and moments output file for rigid body on its local reference frame
+        PtrList<functionObjects::forceMultiphase> forceFile_;
 
     // Private Member Functions
 
