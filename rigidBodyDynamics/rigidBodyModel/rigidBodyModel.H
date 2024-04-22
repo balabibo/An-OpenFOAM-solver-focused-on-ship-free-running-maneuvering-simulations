@@ -136,6 +136,9 @@ protected:
         //  used to set the size of the of joint state fields q, qDot and qDdot.
         label nDoF_;
 
+        //-Declare the relationship between Dof and bodyMeshes_'s joint (in rigidMeshMotion.H)
+        DynamicList<spatialVector>detailDof_;
+
         //- True if any of the joints using quaternions
         bool unitQuaternions_;
 
@@ -159,9 +162,15 @@ protected:
 
 
     // Mutable kinematic body state fields
+        
+        //-The spatial displacement of the bodies
+        // mutable DynamicList<spatialVector> d_;
 
         //- The spatial velocity of the bodies
         mutable DynamicList<spatialVector> v_;
+
+        //-The spatial velocity of the bodies last time-step
+        // mutable DynamicList<spatialVector> v0_;
 
         //- The spatial acceleration of the bodies
         mutable DynamicList<spatialVector> a_;
@@ -244,6 +253,9 @@ public:
 
         //- Return the list of the bodies in the model
         inline PtrList<rigidBody> bodies() const;
+        
+        //-Return hashlabel of bodyIDs
+        inline HashTable<label> hbsize() const;
 
         //- List of the number of joints for each bodyMeshes_ (in rigidMeshMotion.H)
         inline const DynamicList<label>& countJoint() const;
@@ -257,6 +269,9 @@ public:
         //- Return the number of degrees of freedom of the model
         //  used to set the size of the of joint state fields q, qDot and qDdot.
         inline label nDoF() const;
+
+        //-Return the relationship between Dof and bodyMeshes_'s joint (in rigidMeshMotion.H)
+        inline const spatialVector detailDof(const label i) const;
 
         //- Return true if any of the joints using quaternions
         inline bool unitQuaternions() const;
@@ -273,6 +288,9 @@ public:
 
         //- Return the inertia of body i
         inline const rigidBodyInertia& I(const label i) const;
+
+        //-Return the spatial displacement of the bodies
+        inline const spatialVector& d(const label i) const;
 
         //- Return the spatial velocity of the bodies
         inline const spatialVector& v(const label i) const;
@@ -335,9 +353,6 @@ public:
         //- Return the ID of the body with the given name
         inline label bodyID(const word& name) const;
 
-        // -Return hashlabel of bodyIDs
-        inline HashTable<label> hbsize() const;
-
         //- Return the current transform to the global frame for the given body
         spatialTransform X0(const label bodyId) const;
 
@@ -371,6 +386,9 @@ public:
         //  from the given joint state fields following an integration step
         //  of the forwardDynamics
         void forwardDynamicsCorrection(const rigidBodyModelState& state) const;
+
+        //-Mark the detail position of every dof in bodyMeshes_
+        void InitialDetailDof();
 
         //- redefine a fuction for writing the rigidBodyState dictionary
         //  with full six DoFs for each bodyMesh

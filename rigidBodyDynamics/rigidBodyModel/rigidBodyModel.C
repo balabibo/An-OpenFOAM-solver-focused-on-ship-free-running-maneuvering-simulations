@@ -56,6 +56,7 @@ void Foam::RBD::rigidBodyModel::initializeRootBody()
     XT_.append(spatialTransform());
 
     nDoF_ = 0;
+    detailDof_.append(Zero);
     unitQuaternions_ = false;
 
     resizeState();
@@ -66,8 +67,9 @@ void Foam::RBD::rigidBodyModel::resizeState()
 {
     Xlambda_.append(spatialTransform());
     X0_.append(spatialTransform());
-
+    // d_.append(Zero);
     v_.append(Zero);
+    // v0_.append(Zero);
     a_.append(Zero);
     c_.append(Zero);
 
@@ -218,6 +220,9 @@ Foam::RBD::rigidBodyModel::rigidBodyModel
     
     // Read the restraints and any other re-readable settings.
     read(dict);
+ 
+    InitialDetailDof();
+
 }
 
 
@@ -395,6 +400,41 @@ Foam::spatialTransform Foam::RBD::rigidBodyModel::X0
     return X0_[bodyId];
 }
 
+void Foam::RBD::rigidBodyModel::InitialDetailDof()
+{
+    label sumJoint = 0;
+    label serialDoF = 0;
+    
+
+    for(label i=1; i< this->countJoint().size(); i++) // i refer to the ith bodyMesh
+    {
+        detailDof_.append(Zero);
+        sumJoint += this->countJoint()[i];
+        for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j refer to the label of joint 
+        {
+
+            forAll(this->joints()[j].S(), bi)
+            {
+                label whichDoF = 0;
+
+                for(whichDoF=0; whichDoF<6; whichDoF++)
+                {
+                    if(this->joints()[j].S()[bi][whichDoF] == 1)
+                    {                        
+                        break;
+                    }
+                }
+
+                detailDof_[i][whichDoF] = serialDoF;
+
+                serialDoF++;
+            }
+
+
+        }
+
+    }
+}
 
 void Foam::RBD::rigidBodyModel::writingState
 (
@@ -409,12 +449,16 @@ void Foam::RBD::rigidBodyModel::writingState
     label sumJoint = 0;
     label serialDoF = 0;
     
-    Info<<nl<<"********"<<"now writing ......"<<endl;
-    for(label i=1; i< this->countJoint().size(); i++) // i refers to the ith bodyMesh_ in rigidBodyMeshMotion.H
+    //Info<<nl<<"********"<<nl<<"now writing ......"<<endl;
+    for(label i=1; i< this->countJoint().size(); i++) // i代表第i个bodyMesh
     {
+        //Info<<nl<<"第"<<i<<"个bodymesh的joint数量为"<<this->countJoint()[i]<<nl
+        //<<",其各joint的情况分别为："
+        //<<endl;
         sumJoint += this->countJoint()[i];
-        for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j refer to the jth joint 
+        for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j代表joint的序号
         {
+            //Info<<nl<<"第"<<j<<"个joint属于第"<<i<<"个bodymesh，其自由度分布为："<<this->joints()[j].S()<<endl;
             forAll(this->joints()[j].S(), bi)
             {
                 label whichDoF = 0;
@@ -452,14 +496,20 @@ void Foam::RBD::rigidBodyModel::readingState
 {
     label sumJoint = 0;
     label serialDoF = 0;
-
-    for(label i=1; i< this->countJoint().size(); i++) // i refers to the ith bodyMesh_ in rigidBodyMeshMotion.H
+    Info<<nl<<"********"<<"now loading ......"<<nl
+    <<"qOld = "<<qOld<<nl
+    <<"qDotOld = "<<qDotOld<<nl
+    <<"qDdotOld = "<<qDdotOld<<nl
+    <<endl;
+    for(label i=1; i< this->countJoint().size(); i++) // i代表第i个bodyMesh
     {
-
+        Info<<nl<<"第"<<i<<"个bodymesh的joint数量为"<<this->countJoint()[i]<<nl
+        <<",其各joint的情况分别为："
+        <<endl;
         sumJoint += this->countJoint()[i];
-        for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j refer to the jth joint 
+        for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j代表joint的序号
         {
-
+            Info<<nl<<"第"<<j<<"个joint属于第"<<i<<"个bodymesh，其自由度分布为："<<this->joints()[j].S()<<endl;
             forAll(this->joints()[j].S(), bi)
             {
                 label whichDoF = 0;
@@ -471,12 +521,17 @@ void Foam::RBD::rigidBodyModel::readingState
                         break;
                     }
                 }
-              
+/*
+                qNew[6*i-6 + whichDoF] = this->state().q()[serialDoF];
+                qDotNew[6*i-6 + whichDoF] = this->state().qDot()[serialDoF];
+                qDdotNew[6*i-6 + whichDoF] = this->state().qDdot()[serialDoF];
+                serialDoF++;
+*/                
                 qNew[serialDoF] = qOld[6*i-6 + whichDoF];
                 qDotNew[serialDoF] = qDotOld[6*i-6 + whichDoF];
                 qDdotNew[serialDoF] = qDdotOld[6*i-6 + whichDoF];
                 
-//                Info<<nl<<"qDotNew["<<serialDoF<<"] = "<< qDotNew[serialDoF] <<endl;
+                Info<<nl<<"qDotNew["<<serialDoF<<"] = "<< qDotNew[serialDoF] <<endl;
                 serialDoF++;
             }
 

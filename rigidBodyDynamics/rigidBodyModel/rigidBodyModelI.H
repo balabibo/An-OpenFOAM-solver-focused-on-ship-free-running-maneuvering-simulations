@@ -71,6 +71,13 @@ inline Foam::label Foam::RBD::rigidBodyModel::nDoF() const
     return nDoF_;
 }
 
+inline const Foam::spatialVector Foam::RBD::rigidBodyModel::detailDof
+(
+    const label i
+) const
+{
+    return detailDof_[i];
+}
 
 inline bool Foam::RBD::rigidBodyModel::unitQuaternions() const
 {
@@ -112,6 +119,12 @@ Foam::RBD::rigidBodyModel::I(const label i) const
     return bodies_[i];
 }
 
+
+// inline const Foam::spatialVector&
+// Foam::RBD::rigidBodyModel::d(const label i) const
+// {
+//     return d_[i];
+// }
 
 inline const Foam::spatialVector&
 Foam::RBD::rigidBodyModel::v(const label i) const
@@ -177,10 +190,12 @@ inline Foam::label Foam::RBD::rigidBodyModel::bodyID(const word& name) const
     return bodyIDs_[name];
 }
 
+
 inline Foam::HashTable<Foam::label> Foam::RBD::rigidBodyModel::hbsize() const
 {
     return bodyIDs_;
 }
+
 
 inline Foam::vector Foam::RBD::rigidBodyModel::masterPoint
 (
