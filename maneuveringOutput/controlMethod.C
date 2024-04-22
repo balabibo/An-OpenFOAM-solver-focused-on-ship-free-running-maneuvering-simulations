@@ -97,7 +97,7 @@ turningControl::turningControl(const dictionary &dict)
 scalar turningControl::calculate(scalar currentYaw, const scalar deltaT)
 {
     Info<<nl<<"turningControl is running!!"<<nl;
-    if(fabs(outputSignal_) >= fabs(cMax_)*M_PI/180)
+    if(abs(outputSignal_) >= abs(cMax_)*M_PI/180)
     {
        outputSignal_ = cMax_*M_PI/180;
        //return outputSignal_;
@@ -142,28 +142,28 @@ zigzagControl::zigzagControl(const dictionary &dict)
 scalar zigzagControl::calculate(scalar currentYaw, const scalar deltaT)
 {
     Info<<nl<<"zigzagControl is running!!"<<nl;
-    if(oldYaw_ < fabs(cTarget_) && currentYaw >= fabs(cTarget_))
+    if(oldYaw_ < abs(cTarget_) && currentYaw >= abs(cTarget_))
     {
-       cRate_ = -1*fabs(cRate_);
+       cRate_ = -1*abs(cRate_);
     }
        
-    else if(oldYaw_ > -1*fabs(cTarget_) && currentYaw <= -1*fabs(cTarget_))
+    else if(oldYaw_ > -1*abs(cTarget_) && currentYaw <= -1*abs(cTarget_))
     {
-       cRate_ = fabs(cRate_);      
+       cRate_ = abs(cRate_);      
     } 
        
     outputSignal_ += cRate_*deltaT;
     
-    if(outputSignal_ >= fabs(cMax_))
+    if(outputSignal_ >= abs(cMax_))
     {
-       outputSignal_ = fabs(cMax_);
+       outputSignal_ = abs(cMax_);
        oldYaw_ = currentYaw;
        return 0.0;    
     }
     
-    else if(outputSignal_ <= -1*fabs(cMax_))
+    else if(outputSignal_ <= -1*abs(cMax_))
     {
-       outputSignal_ = -1*fabs(cMax_);
+       outputSignal_ = -1*abs(cMax_);
        oldYaw_ = currentYaw;
        return 0.0;        
     }
@@ -294,10 +294,10 @@ scalar coursekeepingControl::calculate(scalar currentYaw, scalar deltaT)
     // Calculate increased output RPS value
 
     scalar increasedOutputSignal = P_*error + I_*errorIntegral_ + D_*errorDifferential;
-    const scalar deltaMax = fabs(deltaT*cRate_);
-    if(fabs(increasedOutputSignal)>= deltaMax)
+    const scalar deltaMax = abs(deltaT*cRate_);
+    if(abs(increasedOutputSignal)>= deltaMax)
     {
-      increasedOutputSignal = increasedOutputSignal/(fabs(increasedOutputSignal)+VSMALL)*deltaMax;
+      increasedOutputSignal = increasedOutputSignal/(abs(increasedOutputSignal)+VSMALL)*deltaMax;
     }
     //outputSignal_ += increasedOutputSignal;
     outputSignal_ = increasedOutputSignal/deltaT;
