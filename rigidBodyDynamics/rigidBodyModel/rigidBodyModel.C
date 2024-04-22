@@ -449,16 +449,11 @@ void Foam::RBD::rigidBodyModel::writingState
     label sumJoint = 0;
     label serialDoF = 0;
     
-    //Info<<nl<<"********"<<nl<<"now writing ......"<<endl;
-    for(label i=1; i< this->countJoint().size(); i++) // i代表第i个bodyMesh
+    for(label i=1; i< this->countJoint().size(); i++) //  i refer to the ith bodyMesh
     {
-        //Info<<nl<<"第"<<i<<"个bodymesh的joint数量为"<<this->countJoint()[i]<<nl
-        //<<",其各joint的情况分别为："
-        //<<endl;
         sumJoint += this->countJoint()[i];
-        for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j代表joint的序号
+        for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j refer to the label of joint 
         {
-            //Info<<nl<<"第"<<j<<"个joint属于第"<<i<<"个bodymesh，其自由度分布为："<<this->joints()[j].S()<<endl;
             forAll(this->joints()[j].S(), bi)
             {
                 label whichDoF = 0;
@@ -476,8 +471,6 @@ void Foam::RBD::rigidBodyModel::writingState
                 qDdotNew[6*i-6 + whichDoF] = qDdotOld[serialDoF];
                 serialDoF++;
             }
-
-
         }
 
     }
@@ -501,15 +494,11 @@ void Foam::RBD::rigidBodyModel::readingState
     <<"qDotOld = "<<qDotOld<<nl
     <<"qDdotOld = "<<qDdotOld<<nl
     <<endl;
-    for(label i=1; i< this->countJoint().size(); i++) // i代表第i个bodyMesh
+    for(label i=1; i< this->countJoint().size(); i++) // i refer to the ith bodyMesh
     {
-        Info<<nl<<"第"<<i<<"个bodymesh的joint数量为"<<this->countJoint()[i]<<nl
-        <<",其各joint的情况分别为："
-        <<endl;
         sumJoint += this->countJoint()[i];
-        for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j代表joint的序号
+        for(label j= sumJoint - this->countJoint()[i]+1; j<= sumJoint; j++) // j refer to the label of joint 
         {
-            Info<<nl<<"第"<<j<<"个joint属于第"<<i<<"个bodymesh，其自由度分布为："<<this->joints()[j].S()<<endl;
             forAll(this->joints()[j].S(), bi)
             {
                 label whichDoF = 0;
@@ -534,8 +523,6 @@ void Foam::RBD::rigidBodyModel::readingState
                 Info<<nl<<"qDotNew["<<serialDoF<<"] = "<< qDotNew[serialDoF] <<endl;
                 serialDoF++;
             }
-
-
         }
 
     }
