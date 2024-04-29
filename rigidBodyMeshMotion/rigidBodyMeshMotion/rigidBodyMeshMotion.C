@@ -450,26 +450,6 @@ const vector2D Foam::rigidBodyMeshMotion::acquireInput(const word &refBody)
 
 void Foam::rigidBodyMeshMotion::actControl(const word& actBody, const word& refBody, const label& controlType, const scalar& output)
 {
-    // vector axisX(1, 0, 0);
-    // axisX = this->model_.X00(this->model_.bodyID(actBody)).E() & axisX;
-
-
-    // label sumJoint = 0;
-    // label serialDoF = 0;
-    
-    // forAll(bodyMeshes_, bi)
-    // {
-    //     sumJoint += model_.countJoint()[bi+1];
-    //     if(bodyMeshes_[bi].name_ == actBody)
-    //     {
-    //         forAll(model_.joints()[].S(), ji)
-    //         {
-
-    //         }
-    //     }
-    // }
-
-
     label positionDof = 0;
     forAll(bodyMeshes_, bi)
     {
@@ -492,45 +472,6 @@ void Foam::rigidBodyMeshMotion::actControl(const word& actBody, const word& refB
         
     }
 
-
-
-    // for(label i=0; i< model_.nDoF(); i++)
-    // {
-        
-        
-    //     if ((model_.v(model_.bodyID(actBody), Zero)[controlType] - model_.v(model_.bodyID(refBody), Zero)[controlType]) == model_.state().qDot()[i])
-    //     {
-    //         // model_.state().qDot()[i]
-    //         // =
-    //         // output - model_.v(model_.bodyID(refBody), Zero)[controlType];
-            
-    //         model_.state().qDot()[i] = output;
-    //         Info<<nl<<"*****************"<<"outputControl = "<<output<<"*************"<<endl;
-
-    //         model_.state().qDdot()[i] 
-    //         = 
-    //         (model_.state().qDot()[i] - model_.state0().qDot()[i])/mesh().time().deltaTValue();
-
-    //         model_.state().q()[i]
-    //         = 
-    //         (model_.state().qDot()[i] + model_.state0().qDot()[i]) * mesh().time().deltaTValue()/2.0 + model_.state0().q()[i];
-    //     }
-    // }
-
-    // Info<<nl<<"lambda = "<<model_.lambda()
-    //     <<nl<<"bodyID = "<<model_.hbsize()
-    //     <<nl<<model_.countJoint()<<endl;
-    //     forAll(model_.joints(), bi)
-    //     {
-    //         Info<<nl<<model_.joints()[bi].S().size()<<endl;
-    //     }
-
-    // Info<<nl<<"current rudder v  ref 0 = "<<model_.v(model_.bodyID(actBody), Zero)<<nl
-    //     <<"current rudder v = "<<model_.v(model_.bodyID(actBody))<<nl
-    //     <<"Current hull v  ref 0 ="<<model_.v(model_.bodyID(refBody), Zero)<<nl
-    //     <<"Current hull v ="<<model_.v(model_.bodyID(refBody))<<nl
-    //     <<"difference is "<<model_.v(model_.bodyID(actBody), Zero)[controlType] - model_.v(model_.bodyID(refBody), Zero)[controlType]<<nl
-    //     <<"Current model.state().qDot ="<<model_.state().qDot()<<endl;
     model_.forwardDynamicsCorrection(model_.state());
 
 }
@@ -567,15 +508,6 @@ void Foam::rigidBodyMeshMotion::solve()
     scalar oldW(0);
     if (bodyIdCofG_ != "none")
     {
-        // oldPos = model_.cCofR(bodyIdCofG_);
-        // forAll(bodyMeshes_, bi)
-        // {
-        //     if(bodyMeshes_[bi].parentType_ == "root")
-        //     {
-        //         oldW = model_.wCofR(bodyMeshes_[bi].bodyID_)[2];
-        //         oldPos =model_.cCofR(bodyMeshes_[bi].bodyID_);
-        //     }
-        // }
         oldPos =model_.cCofR(model_.bodyID(bodyIdCofG_));
         oldW = model_.wCofR(model_.bodyID(bodyIdCofG_))[2];
     }
@@ -717,16 +649,6 @@ void Foam::rigidBodyMeshMotion::solve()
         scalar presentW(0);
         if (bodyIdCofG_ != "none")
         {
-            // forAll(bodyMeshes_, bi)
-            // {
-
-            //     if(bodyMeshes_[bi].parentType_ == "root")
-            //     {
-            //         presentW = model_.wCofR(bodyMeshes_[bi].bodyID_)[2];
-            //         presentPos =model_.cCofR(bodyMeshes_[bi].bodyID_);
-            //     }
-
-            // }
             presentPos =model_.cCofR(model_.bodyID(bodyIdCofG_));
             presentW = model_.wCofR(model_.bodyID(bodyIdCofG_))[2];
         }
