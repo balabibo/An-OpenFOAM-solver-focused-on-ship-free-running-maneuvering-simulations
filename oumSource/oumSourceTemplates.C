@@ -108,31 +108,19 @@ void Foam::fv::oumSource::calc
     scalar Fy = 0;
     scalar Fz = 0;
     // scalar zB = 0.1;
-    /*
-      Info << "此前源项值： "<< Usource[cells[0]] << endl; // 此处语句会导致程序出错，但表面上看并无问题，放在循环中读取cell[0]也无问题 // 并行的问题 子进程找不到Usource[cells[0]]就会报错，遍历可以解决
-    */
+
     forAll(cells, i)
     {
-
-      //  Info <<"i = "<< i << "  此前源项值： "<< Usource[cells[i]] << endl;
-    //  if(fabs(meshPosi[cells[i]][0])<zB)
-    //  {
-    //    zB = fabs(meshPosi[cells[i]][0]);
-    //  }
-     
-
       refRho = refRho + rho[cells[i]];
       Fy += Usource[cells[i]][1];
       Fz += Usource[cells[i]][2];
     }
-    //  Info<<"x坐标最小为： "<<zB<<endl;
+
      reduce(refRho, sumOp<scalar>());
      reduce(Fy, sumOp<scalar>());
      reduce(Fz, sumOp<scalar>());
      refRho /=  returnReduce(cells_.size(), sumOp<label>());
-     
-    //  Info << "现在源项值： " << Usource[cells[0]] << endl;
-    //  Info<<"J = "<<refU/(diskRPS_*2*diskR_)<<endl
+
     Info<<"refRho = "<<refRho<<endl
         <<"thrust = "<<thrust<<endl
         <<"KT:  "<<thrust/(refRho*diskRPS_*diskRPS_*pow(2*diskR_,4))<<endl
@@ -147,20 +135,7 @@ void Foam::fv::oumSource::calc
         os << tab << diskRPS_<< tab <<thrust<< tab << thrust/(refRho*diskRPS_*diskRPS_*pow(2*diskR_,4))<< tab << torque << tab << 10*torque/(refRho*diskRPS_*diskRPS_*pow(2*diskR_,5)) << tab <<Fy <<tab <<Fz <<endl;      
       }                               
     
-    /*
-    if
-    (
-        mesh_.time().timeOutputValue() >= writeFileStart_
-     && mesh_.time().timeOutputValue() <= writeFileEnd_
-    )
-    {
-        Ostream& os = file();
-        writeCurrentTime(os);
-
-        os  << Uref << tab << Cp << tab << Ct << tab << a << tab << T
-            << endl;
-    }
-    */
+/*
     if (mesh().time().outputTime())
     {
         volVectorField momentumSourceField
@@ -180,7 +155,7 @@ void Foam::fv::oumSource::calc
             momentumSourceField[cells[i]] = Usource[cells[i]];
         momentumSourceField.write();
     }
-  
+  */
     
 }
 
