@@ -32,17 +32,83 @@ Group
     grpFvOptionsSources
 
 Description
-    A momentum source based on blade element momentum theory, you can find
-    more details on the reference.
-   
+    Applies sources on velocity (i.e. \c U) within a specified region
+    to enable actuator disk models for aero/hydro thrust loading of
+    horizontal axis turbines on surrounding flow field in terms of
+    energy conversion processes.
+
+    Available options for force computations:
+    \verbatim
+      Froude          | Froude's one-dimensional ideal actuator disk method
+      variableScaling | Variable-scaling actuator disk method
+    \endverbatim
+
+    The expressions for \c Froude method:
+    \f[
+        T = 2 \rho A | \vec{U_o} \cdot \vec{n} |^2 a (1-a)
+    \f]
+    with
+    \f[
+        a = 1 - \frac{C_p}{C_T}
+    \f]
+    where
+    \vartable
+      T         | Thrust magnitude
+      \rho      | Monitored incoming fluid density
+      A         | Actuator disk planar surface area
+      \vec{U_o} | Incoming velocity spatial-averaged on monitored region
+      \vec{n}   | Surface-normal vector of the actuator disk pointing downstream
+      a         | Axial induction factor
+      C_p       | Power coefficient
+      C_T       | Thrust coefficient
+    \endvartable
+
+    The expressions for \c variableScaling method:
+    \f[
+        T = 0.5 \rho A | \vec{U_m} \cdot \vec{n} |^2 C_T^*
+    \f]
+    with
+    \f[
+        C_T^* = C_T \left( \frac{ |\vec{U_{ref}}| }{ |\vec{U_m}| } \right)^2
+    \f]
+    where
+    \vartable
+      T         | Thrust magnitude
+      \rho      | Monitored incoming fluid density
+      A         | Actuator disk planar surface area
+      \vec{U_m} | Incoming velocity spatial-averaged on actuator disk
+      \vec{n}   | Surface-normal vector of the actuator disk pointing downstream
+      \vec{U_{ref}} | Incoming velocity spatial-averaged on monitored region
+      C_T       | Thrust coefficient
+      C_T^*     | Calibrated thrust coefficient
+    \endvartable
+
     Reference
     \verbatim
-        
-            Tokgoz Emel. (2015).
-            A CFD study on the propeller-hull interaction flow in waves 
-            using body-force distribution model
-            DOI:10.18910/53979
+        Froude's one-dimensional ideal actuator disk (tags:F,BJSB):
+            Froude, R. E. (1889).
+            On the part played in propulsion by differences of fluid pressure.
+            Trans. Inst. Naval Architects, 30, 390.
 
+            Burton, T., Jenkins, N., Sharpe, D., & Bossanyi, E. (2011).
+            Wind energy handbook, 2nd edition.
+            Chichester, the United Kingdom. John Wiley & Sons.
+            Print ISBN:978-0-470-69975-1
+            DOI:10.1002/9781119992714
+
+        Variable-scaling method (tags:LSRMKT,LS):
+            van der Laan, M. P., Sørensen, N. N., Réthoré, P. E.,
+            Mann, J., Kelly, M. C., & Troldborg, N. (2015).
+            The k‐ε‐fP model applied to double wind turbine
+            wakes using different actuator disk force methods.
+            Wind Energy, 18(12), 2223-2240.
+            DOI:10.1002/we.1816
+
+            van der Laan, M. P., Sørensen, N. N., Réthoré, P. E., Mann, J.,
+            Kelly, M. C., Troldborg, N., Hansen, K. S., & Murcia, J. P. (2015).
+            The k‐ε‐fP model applied to wind farms.
+            Wind Energy, 18(12), 2065-2084.
+            DOI:10.1002/we.1804
     \endverbatim
 
     Sources applied to:
@@ -58,25 +124,83 @@ Description
 Usage
     Minimal example by using \c constant/fvOptions:
     \verbatim
-    disk1
+    oumSource1
     {
+        // Mandatory entries (unmodifiable)
+        type            oumSource;
 
-      type            oumSource;
-      refBody         hull;  // reference rigid body when you use maneuvering controller
-      actBody         disk1; // act momentum souce when you use maneuvering controller
-      chordCoeff (6.2575 -36.837 125.59 -226.05 201.38 -70.321);  // coefficients of a chord fitting function, form the constant term to the fifth order term.
-      pitchCoeff (21.437 -108.69 295.87 -430.02 312.63 -89.56);   // coefficients of a pitch fitting function, form the constant term to the fifth order term.
-      diskRadius    0.0465; // radius of propeller
-      diskHub        0.186; // relative hub, which is equal to hub(unit: m)/diskRadius(unit: m)
-      diskDir         (-1 0 0); // the normal direction of the propeller, and the revolution direction is decided according to right-hand law.
-      diskOrigin     (2.65275 0 -0.078651); // the center position of the propeller
-      diskThickness    0.01897182; // the thickness of the propeller
-      bladeNumber             5; // number of blades
-      diskRPS            19.31970308; // initial revolution per second
-   
+        // Mandatory entries (runtime modifiable)
+        diskArea        40.0;
+        diskDir         (1 0 0);
+        Cp              <Function1>;
+        Ct              <Function1>;
+
+        // Conditional optional entries (unmodifiable)
+        monitorMethod   <points|cellSet>;
+        monitorCoeffs
+        {
+            // Option-1
+            points
+            (
+                (p1x p1y p1z)
+                (p2x p2y p2z)
+                ...
+            );
+
+            // Option-2
+            cellSet     <monitorCellSet>;
+        }
+
+        // Optional entries (unmodifiable)
+        variant         <forceMethod>;
+
+        // Optional entries (runtime modifiable)
+        sink            true;
+        writeFileStart  0;
+        writeFileEnd    100;
+
+        // Mandatory/Optional (inherited) entries
+        ...
     }
     \endverbatim
-    
+
+    where the entries mean:
+    \table
+      Property   | Description                         | Type | Reqd     | Dflt
+      type       | Type name: oumSource      | word | yes      | -
+      diskArea   | Actuator disk planar surface area   | scalar | yes    | -
+      diskDir    | Surface-normal vector of the actuator disk <!--
+               --> pointing downstream                 | vector    | yes | -
+      Cp         | Power coefficient                   | Function1 | yes | -
+      Ct         | Thrust coefficient                  | Function1 | yes | -
+      monitorMethod | Type of incoming velocity monitoring method   <!--
+               -->    - see below                      | word | no  | points
+      variant    | Type of the force computation method - see below <!--
+               -->                                     | word | no  | Froude
+      sink       | Flag for body forces to act as a source (false)  <!--
+               -->  or a sink (true)                   | bool   | no  | true
+      writeFileStart | Start time for file output      | scalar | no  | 0
+      writeFileEnd   | End time for file output        | scalar | no  | VGREAT
+    \endtable
+
+    The inherited entries are elaborated in:
+      - \link fvOption.H \endlink
+      - \link cellSetOption.H \endlink
+      - \link writeFile.H \endlink
+      - \link Function1.H \endlink
+
+    Options for the \c monitorMethod entry:
+    \verbatim
+      points  | Monitor incoming velocity field at a given set of points
+      cellSet | Monitor incoming velocity field at a given cellSet
+    \endverbatim
+
+    Options for the \c variant entry:
+    \verbatim
+      Froude          | Froude's one-dimensional ideal actuator disk method
+      variableScaling | Variable-scaling actuator disk method
+    \endverbatim
+
 SourceFiles
     oumSource.C
     oumSourceTemplates.C
@@ -93,6 +217,7 @@ SourceFiles
 #include "geometricOneField.H"
 #include "addToRunTimeSelectionTable.H"
 #include "volFields.H"
+//#include "cellSetOption.H"
 #include "writeFile.H"
 
 
@@ -158,6 +283,11 @@ protected:
 
         //- Name of act momentum source for dynamic mesh
         const word actBody_;
+
+        //- velocity of the rigid body which the source acts on 
+        //-to acquire advance velocity for the source
+        vector vcofR_;
+
 
     //- calculated
         
