@@ -170,7 +170,7 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
 
     static PtrList<uniformDimensionedScalarField> outputValue_;
     static PtrList<uniformDimensionedVectorField> vectorofR_;
-    static PtrList<uniformDimensionedVectorField> centerofR_;
+    static PtrList<uniformDimensionedVectorField> vcenterofR_;
     static PtrList<uniformDimensionedTensorField> transformCofR_;
     for (const entry& dEntry : maneuversDict)
     {
@@ -206,6 +206,24 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
 
                 );
 
+                vcenterofR_.append
+                (
+                    new uniformDimensionedVectorField
+                    (
+                        IOobject
+                        (
+                            clDict.get<word>("refBody") + "velocity",
+                            mesh.time().timeName(),
+                            "uniform",
+                            mesh,
+                            IOobject::READ_IF_PRESENT,
+                            IOobject::NO_WRITE
+                        ),
+                        dimensionedVector(dimless, Zero)
+                    )
+
+                );
+
                 vectorofR_.append
                 (
                     new uniformDimensionedVectorField
@@ -218,24 +236,6 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
                             mesh,
                             IOobject::READ_IF_PRESENT,
                             IOobject::AUTO_WRITE
-                        ),
-                        dimensionedVector(dimless, Zero)
-                    )
-
-                );
-
-                centerofR_.append
-                (
-                    new uniformDimensionedVectorField
-                    (
-                        IOobject
-                        (
-                            clDict.get<word>("refBody") + "RotationCenter",
-                            mesh.time().timeName(),
-                            "uniform",
-                            mesh,
-                            IOobject::READ_IF_PRESENT,
-                            IOobject::NO_WRITE
                         ),
                         dimensionedVector(dimless, Zero)
                     )
@@ -650,6 +650,7 @@ void Foam::rigidBodyMeshMotion::solve()
                     fx
                 );
             }
+        
         }
         else
         {
@@ -685,12 +686,13 @@ void Foam::rigidBodyMeshMotion::solve()
 
                 outputV.value() = output;
 
-                auto& cCofR =
+                auto& vCCofR =
                     mesh().lookupObjectRef<uniformDimensionedVectorField>
                     (
-                        refBody + "RotationCenter"
+                        refBody + "velocity"
                     );
-                cCofR.value() = model_.X0(model_.bodyID(refBody)).r();
+                // vCCofR.value() = model_.X0(model_.bodyID(refBody)).r();
+                vCCofR.value() = model_.vCofR(model_.bodyID(refBody));
 
                 spatialTransform X(model_.X0(model_.bodyID(refBody)).inv() & model_.X00(model_.bodyID(refBody)));
 
@@ -710,6 +712,7 @@ void Foam::rigidBodyMeshMotion::solve()
                 
             }
         }
+
         vector presentPos(vector::uniform(GREAT));
         scalar presentW(0);
         if (bodyIdCofG_ != "none")
@@ -868,30 +871,32 @@ void Foam::rigidBodyMeshMotion::solve()
 
         
     }
-
-    // Update the displacements
-    if (bodyMeshes_.size() == 1)
+    if (t.value() >= rampTime_)
     {
-        pointDisplacement_.primitiveFieldRef() = model_.transformPoints
-        (
-            bodyMeshes_[0].bodyID_,
-            bodyMeshes_[0].weight_,
-            points0()
-        ) - points0();
-    }
-    else
-    {
-        labelList bodyIDs(bodyMeshes_.size());
-        List<const scalarField*> weights(bodyMeshes_.size());
-        forAll(bodyIDs, bi)
+        // Update the displacements
+        if (bodyMeshes_.size() == 1)
         {
-            bodyIDs[bi] = bodyMeshes_[bi].bodyID_;
-            weights[bi] = &bodyMeshes_[bi].weight_;
+            pointDisplacement_.primitiveFieldRef() = model_.transformPoints
+            (
+                bodyMeshes_[0].bodyID_,
+                bodyMeshes_[0].weight_,
+                points0()
+            ) - points0();
         }
+        else
+        {
+            labelList bodyIDs(bodyMeshes_.size());
+            List<const scalarField*> weights(bodyMeshes_.size());
+            forAll(bodyIDs, bi)
+            {
+                bodyIDs[bi] = bodyMeshes_[bi].bodyID_;
+                weights[bi] = &bodyMeshes_[bi].weight_;
+            }
 
-         pointDisplacement_.primitiveFieldRef() =
-             model_.transformPoints(bodyIDs, weights, points0()) - points0();
+            pointDisplacement_.primitiveFieldRef() =
+                model_.transformPoints(bodyIDs, weights, points0()) - points0();
 
+        }
     }
     // Displacement has changed. Update boundary conditions
     pointConstraints::New
