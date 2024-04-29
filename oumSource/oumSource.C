@@ -48,32 +48,7 @@ namespace fv
 
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
-/*
-void Foam::fv::oumSource::writeFileHeader(Ostream& os)
-{
-    writeFile::writeHeader(os, "Actuation disk source");
-    writeFile::writeCommented(os, "Time");
-    writeFile::writeCommented(os, "Uref");
-    writeFile::writeCommented(os, "Cp");
-    writeFile::writeCommented(os, "Ct");
 
-    if (forceMethod_ == forceMethodType::FROUDE)
-    {
-        writeFile::writeCommented(os, "a");
-        writeFile::writeCommented(os, "T");
-    }
-    else if (forceMethod_ == forceMethodType::VARIABLE_SCALING)
-    {
-        writeFile::writeCommented(os, "Udisk");
-        writeFile::writeCommented(os, "CpStar");
-        writeFile::writeCommented(os, "CtStar");
-        writeFile::writeCommented(os, "T");
-        writeFile::writeCommented(os, "P");
-    }
-
-    os  << endl;
-}
-*/
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
@@ -156,35 +131,6 @@ Foam::fv::oumSource::oumSource
         ),
         dimensionedSymmTensor(dimless, Zero)
     );
-
-    // const Foam::cellCellStencilObject& overlap = Foam::Stencil::New(mesh);
-    // const labelList& cellTypes = overlap.cellTypes();
-
-    // DynamicList<label> cells;
-    // // Create a dimensioned origin position to use with default OF mesh types
-    // dimensionedVector x0 ("x0", dimLength, diskOri_);
-
-    // // compute distance and normal vectors from origin of the disk to use for selection
-    // scalarField R (mag(mesh.C() - x0));
-    // vectorField rHat ((mesh.C() - x0) / mag(mesh.C() - x0));
-
-    // // go over each cell in the grid and comapre it against selection criteria
-    // for (label cellI = 0; cellI < mesh.C().size(); cellI++)
-    // {
-    //     if(cellTypes[cellI] < 0.5)
-    //     {
-    //     // determine distance from cell centre to disk axis and along the normal direction
-    //     scalar dNormal = R[cellI] * (rHat[cellI] & diskDir_);
-    //     scalar dRadial = sqrt(pow(R[cellI], 2.) - pow(dNormal, 2.));
-
-    //     // see if the cell is within tolerance from the centre of the disk
-    //     if ((fabs(dNormal) < diskThick_/2.) && (dRadial < diskR_) && (dRadial > diskH_*diskR_))
-    //     // if ((dNormal > -1.0*diskThick_) && (dRadial < diskR_) && (dRadial > diskH_*diskR_) && (dNormal < 0))
-    //         cells.append(cellI);
-    //     }
-    // }
-
-
     
     fieldNames_.resize(1, "U");
 
@@ -206,39 +152,7 @@ Foam::fv::oumSource::oumSource
          << "diskThick_ "<< diskThick_ << nl
          << "bladeN_ " <<bladeN_ << nl
          << "diskRPS_ " << diskRPS_<<endl;
-         
-    // tensor  roaTen(coeffs_.getOrDefault<tensor>("roaTensor",tensor::I));
-    // vector  roaCenter(coeffs_.getOrDefault<vector>("roaCenter",Zero));
-    // // // vector  omegaR(coeffs_.getOrDefault<vector>("omega",Zero));
-    // vector  tranS(coeffs_.getOrDefault<vector>("v",Zero));
-    // spatialTransform x00(I, vector(0.178, 0, 0.3323));
-    // spatialTransform body1(roaTen, roaCenter);
-    // spatialTransform X(body1.inv() & x00);
-    // vector tranP = X.transformPoint(tranS);
-    // vector body2 = spatialTransform(body1.E().T(), roaCenter).transformPoint(tranS);
-    
-    // // // spatialVector velo(omegaR, tranS);
-    
-    // vector vAfter = body1.transformPoint(tranS);
-    // // spatialVector veloAfter = body1 & velo;
-    // // spatialVector veloTranAfter = body1.T() & velo;
-    // // spatialVector veloTranA = body1.inv() & velo;
-    // Info<<nl<<"**********************************"<<nl
-    //     <<"diskOri = "<<tranS<<nl
-    //     <<"transformation = "<<body1<<nl
-    //     <<"transformation & diskOri = "<<vAfter<<endl
-    //     <<"transformation.T() & diskOri  = "<<body2<<endl
-    //     <<"body1.inv() & x00 = "<<X<<nl
-    //     <<"transformation  diskOri "<<tranP<<endl;
-    //     <<"transformation.inv() = "<<body1.inv()<<nl
-    //     <<"transformation.inv() & velo = "<<veloTranA<<nl
-    //     <<endl;
-     
-    //  tensor aa(vector::uniform(1), Zero, Zero);
-    //  aa = tensor::I & aa;
-    //  Info<<nl<<"aa = "<<aa<<nl
-    //  <<"aa & I = " <<aa<<nl
-    //  <<"I & aa = " <<aa<<endl;  
+        
     Ostream& os = file();
         os<<"Time"<<tab<<"diskRPS"<<tab<<"thrust"<<tab << "KT" <<tab<<"torque"<<tab<<"10KQ"<<tab<<"Fy"<<tab<<"Fz"<<endl;
 
@@ -311,17 +225,6 @@ bool Foam::fv::oumSource::read(const dictionary& dict)
 {
     if (fv::option::read(dict))
     {
-        // dict.readIfPresent("rotationDir", rotaDir_);
-        // dict.readIfPresent("diskDir", diskDir_);
-        // diskDir_.normalise();
-        // if (mag(diskDir_) < VSMALL)
-        // {
-        //     FatalIOErrorInFunction(dict)
-        //         << "Actuator disk surface-normal vector is zero: "
-        //         << "diskDir = " << diskDir_
-        //         << exit(FatalIOError);
-        // }
-
         return true;
     }
 
@@ -391,13 +294,6 @@ void Foam::fv::oumSource::update()
         diskOri_ = X.transformPoint(oriDiskOri_);
         diskDir_ = p -diskOri_;
         Info<<nl<<"momentum source position has been updated!"<<endl;
-        /*
-        Info<<nl<<"momentum source position has been updated!"<<nl
-            <<"transform = "<<X<<nl
-            <<"p = "<<p<<nl
-            <<"diskOri_ = "<<diskOri_<<nl
-            <<"diskDir_ = "<<diskDir_<<endl;
-        */   
     }
     cells_ = updateCells();    
 
@@ -406,15 +302,9 @@ void Foam::fv::oumSource::update()
         << " cell(s) with volume " << diskV_ << endl;
     
     Info << nl
-         //<< "refBody :"<<refBody_ <<nl
-         //<< "actBody :" << actBody_ <<nl
-         //<< "chordCoef_ :" << chordCoef_ << nl
-         //<< "pitchCoef_ :" << pitchCoef_ << nl
          << "diskR_ " << diskR_ << nl
-         //<< "diskH_ " << diskH_ << nl
          << "diskDir_" << diskDir_ << nl
          << "diskOri_" << diskOri_ << nl
-         //<< "diskThick_ "<< diskThick_ << nl
          << "bladeN_ " <<bladeN_ << nl
          << "diskRPS_ " << diskRPS_<<endl;   
 }
@@ -474,55 +364,7 @@ DynamicList<label> Foam::fv::oumSource::updateCells()
     reduce(diskV_, sumOp<scalar>());
 
     Info<<nl<<"momentum source cells have been updated!"<<endl;
-    // const vectorField& meshPosi = mesh().C();
-    // scalar cellXMax = -100000.0;
-    // scalar cellXMin = 100000.0;
-    // scalar cellYMax = -100000.0;
-    // scalar cellYMin = 100000.0;
-    // scalar cellZMax = -100000.0;
-    // scalar cellZMin = 100000.0;
-    // forAll(cells, j)
-    // {
-    //     if( meshPosi[cells[j]][0] > cellXMax )
-    //     {
-    //         cellXMax = meshPosi[cells[j]][0];
-    //     }
-    //     else if( meshPosi[cells[j]][0] < cellXMin )
-    //     {
-    //         cellXMin = meshPosi[cells[j]][0];
-    //     }
-
-    //     if( meshPosi[cells[j]][1] > cellYMax )
-    //     {
-    //         cellYMax = meshPosi[cells[j]][1];
-    //     }
-    //     else if( meshPosi[cells[j]][1] < cellYMin )
-    //     {
-    //         cellYMin = meshPosi[cells[j]][1];
-    //     }
-
-    //     if( meshPosi[cells[j]][2] > cellZMax )
-    //     {
-    //         cellZMax = meshPosi[cells[j]][2];
-    //     }
-    //     else if( meshPosi[cells[j]][2] < cellZMin )
-    //     {
-    //         cellZMin = meshPosi[cells[j]][2];
-    //     }                
-    // }    
-    // reduce(cellXMax, maxOp<scalar>());
-    // reduce(cellYMax, maxOp<scalar>());
-    // reduce(cellZMax, maxOp<scalar>());
-    // reduce(cellXMin, minOp<scalar>());
-    // reduce(cellYMin, minOp<scalar>());
-    // reduce(cellZMin, minOp<scalar>());
-    // Info<<nl<<"cellXMax = "<<cellXMax 
-    //     <<nl<<"cellXMin = "<<cellXMin
-    //     <<nl<<"cellYMax = "<<cellYMax
-    //     <<nl<<"cellYMin = "<<cellYMin
-    //     <<nl<<"cellZMax = "<<cellZMax
-    //     <<nl<<"cellZMin = "<<cellZMin
-    //     <<endl;
+  
     return cells;
 }
 
