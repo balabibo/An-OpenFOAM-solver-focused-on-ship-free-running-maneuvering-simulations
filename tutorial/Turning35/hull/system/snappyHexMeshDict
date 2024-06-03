@@ -1,0 +1,366 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    
+    hull.stl
+    {
+      
+        type triSurfaceMesh;
+        name hull;
+        regions
+        {
+            hull_deck
+            {
+                name    hull_deck;
+            }
+            
+            hull_hull
+            {
+                name    hull_hull;
+            } 
+              
+            hull_stern
+            {
+                name    hull_stern;
+            }  
+             
+            hull_shaft
+            {
+                name    hull_shaft;
+            }   
+                      
+        }
+    }
+            
+    // sternRefine
+    // {
+    //     type searchableBox;
+    //     min (6.92 -0.65 -0.42);
+    //     max (7.55 0.65 0.20);
+    // }
+
+    // sternRefine2
+    // {
+    //     type searchableBox;
+    //     min (7.185 -0.025 -0.358);
+    //     max (7.41 0.025 0.01);
+    // }
+        
+    //bowRefine
+    //{
+    //    type searchableBox;
+    //    min (-0.10 -0.15 -0.15);
+    //    max (0.075 0.15 0.08);
+    //}
+    
+//    oumRefine1
+//    {
+//        type searchableCylinder;
+//        point1 (7.05 0 -0.212025618);
+//        point2 (7.35 0 -0.212025618);
+//        radius  0.2;
+//    }
+   
+//    oumRefine2
+//    {
+//        type searchableCylinder;
+//        point1 (7.12 0 -0.212025618);
+//        point2 (7.30 0 -0.212025618);
+//        radius  0.14;
+//    }  
+   
+   oumRefine3
+   {
+       type searchableCylinder;
+       point1 (2.55 0 -0.078651);
+       point2 (2.85 0 -0.078651);
+       radius  0.1;
+   }
+   
+   oumRefine4
+   {
+       type searchableCylinder;
+       point1 (2.63378 0 -0.078651);
+       point2 (2.75222 0 -0.078651);
+       radius  0.075;
+   } 
+   
+   oversetRefine
+   {
+       type searchableCylinder;
+       point1 (2.697 0 -0.144);
+       point2 (2.697 0 -0.021);
+       radius  0.045;   
+   }
+       
+     //sternRefine
+     //{
+     //    type searchableCylinder;
+     //    point1 (2.7 0 0.0001793);
+     //    point2 (2.7 0 -0.143185);
+     //    radius  0.06;
+     //}    
+    
+    // oumRefine2
+    // {
+    //     type searchableCylinder;
+    //     point1 (2.72 0 -0.02);
+    //     point2 (2.72 0 -0.16);
+    //     radius  0.075;
+    // } 
+};
+
+castellatedMeshControls
+{
+    maxLocalCells   2000000;
+    maxGlobalCells  300000000;
+    minRefinementCells 0; // 20
+    nCellsBetweenLevels 5;
+    maxLoadUnbalance 0.1;
+    allowFreeStandingZoneFaces false;
+    resolveFeatureAngle     30;
+    features
+    (
+    
+        {
+            file "bowLine.eMesh";
+            level 1 ;
+        }
+    
+        {
+            file "deckLine.eMesh";
+            level 0 ;
+        }
+    
+        {
+            file "shaftLine.eMesh";
+            level 2 ;
+        }
+    
+        {
+            file "skegLine2.eMesh";
+            level 2 ;
+        }
+    
+        {
+            file "sternLine.eMesh";
+            level 0 ;
+        }
+                 
+                                       
+    );
+
+    refinementSurfaces
+    {
+    
+        hull
+        {
+            level (0 0);
+            regions
+            {
+               hull_deck
+               {
+                  level (0 0);
+                  patchInfo
+                  {
+                      type wall;
+                      inGroups (meshedWalls);
+                  }
+               }
+               hull_hull
+               {
+                  level (0 0);
+                  patchInfo
+                  {
+                      type wall;
+                      inGroups (meshedWalls);
+                  }
+               }
+               hull_shaft
+               {
+                  level (1 1);
+                  patchInfo
+                  {
+                      type wall;
+                      inGroups (meshedWalls);
+                  }
+               }
+               hull_stern
+               {
+                  level (0 0);
+                  patchInfo
+                  {
+                      type wall;
+                      inGroups (meshedWalls);
+                  }
+               }
+                     
+            }
+
+        }
+        
+    }
+
+    refinementRegions
+    {
+        
+        //hull
+        //{
+        //    mode    distance;
+        //    levels  ((0.06 0));
+        //}
+                
+        // sternRefine      
+        // {
+        //     mode    inside;
+        //     levels  ((0.06 0));
+        // }
+        
+        // sternRefine2      
+        // {
+        //     mode    inside;
+        //     levels  ((0.06 0));
+        // }
+        
+        //bowRefine      
+        //{
+        //    mode    inside;
+        //    levels  ((0.06 1));
+        //}
+                
+         //sternRefine
+         //{
+         //    mode inside;
+         //    levels ((0 3));
+         //}
+        
+        //  oumRefine2
+        //  {
+        //      mode inside;
+        //      levels ((0 2));
+        //  }
+                
+        oversetRefine
+        {
+            mode inside;
+            levels ((0 3));
+        }
+        
+         oumRefine4
+         {
+             mode inside;
+             levels ((0 2));
+         }              
+    }
+
+    locationInMesh ( 2.8 0.001 -0.011 );
+}
+
+snapControls
+{
+    tolerance       2; //2
+    implicitFeatureSnap false;
+    explicitFeatureSnap true;
+    multiRegionFeatureSnap false;
+    detectNearSurfacesSnap true;
+    nSmoothPatch    10; //5
+    nSolveIter      50;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+    nSmoothInternal 3; // 3
+    nFaceSplitInterval 5; // 5
+}
+
+addLayersControls
+{
+    layers
+    {
+        "(hull_hull)"
+        {
+            nSurfaceLayers 8;
+        }
+    }
+    relativeSizes    true ;
+    expansionRatio    1.3 ;
+    //firstLayerThickness   0.02; // 0.3
+    finalLayerThickness   0.3;
+    featureAngle    130;
+    slipFeatureAngle 30;
+    nGrow           0; //key coefficient
+    nBufferCellsNoExtrude 0;
+    minMedialAxisAngle 90;
+    maxFaceThicknessRatio 0.8;
+    maxThicknessToMedialRatio 0.7;
+    minThickness    1e-16;
+    nLayerIter      50; //10
+    nRelaxIter      5;
+    nSmoothSurfaceNormals 1; //10
+    nSmoothNormals  3;
+    nSmoothThickness 10;
+    nRelaxedIter    20;
+    nMedialAxisIter 10;
+}
+
+meshQualityControls
+{
+    minVol          1e-20;
+    minTetQuality   1e-20;
+    minArea         1e-20;
+    minTwist        0.05;
+    minDeterminant  0.001; //1e-06
+    minFaceWeight   0.05; //0.02
+    minVolRatio     0.01;
+    minTriangleTwist -1;
+    minFlatness     0.5;
+    maxNonOrtho     70;
+    maxBoundarySkewness 20;
+    maxInternalSkewness 4;
+    maxConcave      80;
+    nSmoothScale    4;
+    errorReduction  0.75;
+
+    relaxed
+    {
+        minVol          1e-30;
+        minTetQuality   1e-30;
+        minArea         1e-30;
+        minTwist        0.001;
+        minDeterminant  1e-06;
+        minFaceWeight   1e-06;
+        minVolRatio     0.01;
+        minTriangleTwist -1;
+        minFlatness     0.5;
+        maxNonOrtho     75;
+        maxBoundarySkewness 20;
+        maxInternalSkewness 8;
+        maxConcave      80;
+        nSmoothScale    4;
+        errorReduction  0.75;
+    }
+}
+
+mergeTolerance  1e-06;
+
+debug           0;
+
+
+// ************************************************************************* //

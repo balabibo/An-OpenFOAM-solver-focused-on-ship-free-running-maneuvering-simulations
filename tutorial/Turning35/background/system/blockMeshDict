@@ -1,0 +1,154 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+scale    2.7;
+
+xmin    -1;
+xmax    4;
+ymin    -1.5;
+ymax    1.5;
+zmin    -1;
+z1      -0.15;
+z2      -0.01;
+zmid     0;
+z3       0.01;
+z4       0.15; //0.25
+zmax     0.5;
+
+
+vertices
+(
+    ( $xmin $ymin $zmin )
+    ( $xmax $ymin $zmin )
+    ( $xmax $ymax $zmin )
+    ( $xmin $ymax $zmin )
+    ( $xmin $ymin $z1 )
+    ( $xmax $ymin $z1 )
+    ( $xmax $ymax $z1 )
+    ( $xmin $ymax $z1 )
+    ( $xmin $ymin $z2 )
+    ( $xmax $ymin $z2 )
+    ( $xmax $ymax $z2 )
+    ( $xmin $ymax $z2 ) 
+    ( $xmin $ymin $zmid )
+    ( $xmax $ymin $zmid )
+    ( $xmax $ymax $zmid )
+    ( $xmin $ymax $zmid )      
+    ( $xmin $ymin $z3 )
+    ( $xmax $ymin $z3 )
+    ( $xmax $ymax $z3 )
+    ( $xmin $ymax $z3 )     
+    ( $xmin $ymin $z4 )
+    ( $xmax $ymin $z4 )
+    ( $xmax $ymax $z4 )
+    ( $xmin $ymax $z4 )
+    ( $xmin $ymin $zmax )
+    ( $xmax $ymin $zmax )
+    ( $xmax $ymax $zmax )
+    ( $xmin $ymax $zmax )
+);
+
+//    hex (4 5 6 7 8 9 10 11) (24 14 31) simpleGrading (1 1 1)
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) (18 10 9) simpleGrading (1 1 0.05)
+    hex (4 5 6 7 8 9 10 11) (18 10 12) simpleGrading (1 1 1)
+    hex (8 9 10 11 12 13 14 15) (18 10 3) simpleGrading (1 1 1)
+    hex (12 13 14 15 16 17 18 19) (18 10 3) simpleGrading (1 1 1)
+    hex (16 17 18 19 20 21 22 23) (18 10 12) simpleGrading (1 1 1)
+    hex (20 21 22 23 24 25 26 27) (18 10 4) simpleGrading (1 1 22.5)      
+);
+
+edges
+(
+);
+
+boundary
+(
+
+    inlet
+    {
+        type patch;
+        faces
+        (
+            (0 4 7 3)
+            (4 8 11 7)
+            (8 12 15 11)
+            (12 16 19 15)
+            (16 20 23 19)
+            (20 24 27 23)
+        );
+    }
+    outlet
+    {
+        type patch;
+        faces
+        (
+            (1 2 6 5)
+            (5 6 10 9)
+            (9 10 14 13)
+            (13 14 18 17)
+            (17 18 22 21)
+            (21 22 26 25)
+        );
+    }
+    ymin
+    {
+        type symmetry;
+        faces
+        (
+            (0 1 5 4)
+            (4 5 9 8)
+            (8 9 13 12)
+            (12 13 17 16)
+            (16 17 21 20)
+            (20 21 25 24)
+        );
+    }
+    ymax
+    {
+        type symmetry;
+        faces
+        (
+            (3 7 6 2)
+            (7 11 10 6)
+            (11 15 14 10)
+            (15 19 18 14)
+            (19 23 22 18)
+            (23 27 26 22)
+        );
+    }
+    zmin
+    {
+        type symmetry;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+    atmosphere
+    {
+        type patch;
+        faces
+        (
+           (24 25 26 27)
+        );
+    }    
+);
+
+
+// ************************************************************************* //

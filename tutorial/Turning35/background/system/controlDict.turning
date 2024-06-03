@@ -1,0 +1,85 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+libs            (overset rigidBodyDynamics);
+
+application     overInterDyMFoam;
+
+startFrom       latestTime;
+//startFrom       startTime;
+
+startTime       10;
+
+stopAt          endTime;
+//stopAt          writeNow;
+
+endTime         100;
+
+deltaT          2.5e-3;
+
+writeControl    adjustableRunTime;
+//writeControl runTime;
+
+writeInterval   5e-1;
+
+purgeWrite      0;
+
+writeFormat     binary;
+
+writePrecision  8;
+
+writeCompression no;
+
+timeFormat      general;
+
+timePrecision   8;
+
+runTimeModifiable yes;
+
+adjustTimeStep  no;
+
+maxAlphaCo      5; //15
+
+maxCo           15; //70
+
+maxDeltaT       0.1;
+
+functions
+{
+
+    //#include "forces"
+    yPlus
+    {
+        type            yPlus;
+        libs            (fieldFunctionObjects);
+        patches          ("hull|rudder");
+        writeControl  timeStep;
+        writeFields   no;
+        //timeInterval  1;
+    } 
+    
+    solverInfo
+    {
+        type            solverInfo;
+        libs            ("libutilityFunctionObjects.so");
+        fields          (U p_rgh);
+        writeResidualFields no;
+        writeControl    writeTime;
+    } 
+}
+
+
+// ************************************************************************* //

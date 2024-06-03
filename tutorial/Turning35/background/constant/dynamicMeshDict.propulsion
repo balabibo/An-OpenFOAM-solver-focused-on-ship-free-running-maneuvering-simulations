@@ -1,0 +1,187 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      dynamicMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+//dynamicFvMesh       staticFvMesh;
+dynamicFvMesh       dynamicOversetFvMesh;
+
+solvers
+{
+    VF
+    {
+        motionSolverLibs (libfvMotionSolvers);
+        motionSolver            solidBody;
+        solidBodyMotionFunction driven3DofMotion;
+        cellSet                 c0;
+        cOfGdisplacement        CofG;
+    }
+
+    boat_propeller
+    {
+        motionSolverLibs    (librigidBodyMeshMotion);
+        motionSolver         rigidBodyMotion;
+
+        report              on;
+        cellSet             cHullRudder;
+        cOfGdisplacement    CofG;
+        //bodyIdCofG      1;
+        bodyIdCofG      hull;
+
+        solver
+        {
+            type Newmark;
+        }
+
+        accelerationRelaxation 0.8;
+        //accelerationDamping    0.9;
+        accelerationDamping    1.0; // no damping
+        nIter   1;
+
+        bodies
+        {
+            hull
+            {
+                type            rigidBody;
+                parent          root;
+                mass            84.171;
+
+                centreOfMass     (0 0 0);
+                inertia         (1.82926 0 0 38.35 0 38.35);
+                // Transformation tensor and centre of rotation
+                transform       (1 0 0 0 1 0 0 0 1)  (1.39 0 0.0411574);
+                joint
+                {
+                    type            composite;
+
+                    joints
+                    (
+                         {
+                              type Px;
+                         }
+                                                                          
+                    );
+                }
+                patches
+                (
+                    hull_deck
+                    hull_hull
+                    hull_shaft
+                    hull_stern
+                );
+                innerDistance   100; //Mesh deformation limits when using morphing. Still to be assigned, 
+                outerDistance   200; //we put high values so that this will not be active. Wolf Dynamics.
+            }
+            
+            rudder
+            {
+                type            rigidBody;
+                parent          hull;
+                mass            0.001;
+
+                centreOfMass     (0 0 0);
+                inertia         (0.0001 0 0 0.001 0 0.001);
+                // Transformation tensor and centre of rotation
+                transform       (1 0 0 0 1 0 0 0 1)  (1.307 0 0);
+                joint
+                {
+                    type            composite;
+
+                    joints
+                    (
+                         {
+                              type Rz;
+                         }                                                                             
+                    );
+                }
+                patches
+                (
+                    rudder
+                );
+                innerDistance   100; //Mesh deformation limits when using morphing. Still to be assigned, 
+                outerDistance   200; //we put high values so that this will not be active. Wolf Dynamics.
+            }         
+            
+        }
+        restraints
+        {
+            sourceforce
+            {
+                type        sourceForce;
+                body        hull;
+                source      disk1;
+                startTime   0;
+            }             
+
+            translationDamper
+            {
+                type linearDamper;
+                body hull;
+                coeff 100;
+            }
+
+
+            force
+            {
+              type externalForce;
+              body hull;
+              location (1.39 0 0.0411574);
+              force table
+              (
+                (0 (-133.8 0 0))
+                (2 (-133.8 0 0))
+                (5 (-133.8 0 0))
+                (500 (-133.8 0 0))
+              
+              );
+            
+            }         
+                                  
+        }
+        maneuvers
+        {
+            control1
+            {
+                type          sailing;
+                refBody       hull;
+                actBody       disk1;
+                controllerP   10000;
+                controllerI   40;
+                controllerD   0;
+                controllerTarget   1.3381;
+                controllerMax   130;
+                controllerMin   10;
+                outputSignal   5;
+                controllerStartTime   0;
+                controllerEndTime   1000;
+            }        
+            
+            control2
+            {
+                type          turning;
+                refBody       hull;
+                actBody       rudder;
+                controllerRudder  35;
+                controllerRate    35;
+                outputSignal     0;
+                controllerStartTime    100;
+                controllerEndTime   1000;
+            }      
+           
+        }
+    }
+}
+
+
+// ************************************************************************* //

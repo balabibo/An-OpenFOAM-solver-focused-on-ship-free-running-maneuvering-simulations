@@ -1,0 +1,76 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+scale    1;
+
+xmin    -0.8;
+xmax    3.2;
+ymin    -0.4;
+ymax     0.4;
+zmin    -0.25;
+zmid     0;
+zmax     0.25;
+
+
+vertices
+(
+    ( $xmin $ymin $zmin )
+    ( $xmax $ymin $zmin )
+    ( $xmax $ymax $zmin )
+    ( $xmin $ymax $zmin )
+    ( $xmin $ymin $zmid )
+    ( $xmax $ymin $zmid )
+    ( $xmax $ymax $zmid )
+    ( $xmin $ymax $zmid )
+    ( $xmin $ymin $zmax )
+    ( $xmax $ymin $zmax )
+    ( $xmax $ymax $zmax )
+    ( $xmin $ymax $zmax )
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) ( 81 35 25 ) simpleGrading ( 1 1 0.15625 )
+    hex (4 5 6 7 8 9 10 11) ( 81 35 25 ) simpleGrading ( 1 1 6.4 )
+);
+
+edges
+(
+);
+
+boundary
+(
+    overset-1
+    {
+        type overset;
+        faces
+        (
+            (0 4 7 3)
+            (4 8 11 7)
+            (1 2 6 5)
+            (5 6 10 9)
+            (0 1 5 4)
+            (4 5 9 8)
+            (3 7 6 2)
+            (7 11 10 6)
+            (0 3 2 1)
+            (8 9 10 11)
+        );
+    }
+);
+
+
+// ************************************************************************* //

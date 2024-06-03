@@ -1,0 +1,122 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+//hull_uuper
+//{
+//    type          forces;
+//    libs          (forces);
+
+//    writeControl  timeStep;
+//    timeInterval  1;
+
+//    patches       ("hull_u");
+//    log           true;
+    //rho             rhoInf;
+//    rhoInf          1;
+//    CofR          (3.74708101 0 -0.1113924);    // Rotation around centre line of propeller
+//    pitchAxis     (0 1 0);
+//}
+
+//hull_below
+//{
+//    type          forces;
+//    libs          (forces);
+
+//    writeControl  timeStep;
+//    timeInterval  1;
+
+//    patches       ("hull_b");
+//    log           true;
+    //rho             rhoInf;
+//    rhoInf          1;
+//    CofR          (3.74708101 0 -0.1113924);    // Rotation around centre line of propeller
+//    pitchAxis     (0 1 0);
+//}
+
+//hull_overall
+//{
+//    type          forces;
+//    libs          (forces);
+
+//    writeControl  timeStep;
+//    timeInterval  1;
+
+//    patches       ("hull_b|hull_u");
+//    log           true;
+    //rho             rhoInf;
+//    rhoInf          1;
+//    CofR          (3.74708101 0 -0.1113924);    // Rotation around centre line of propeller
+//    pitchAxis     (0 1 0);
+//}
+
+hull_overall_CofG
+{
+    type          forceMultiphase;
+    libs          (forces);
+
+    writeControl  timeStep;
+    timeInterval  1;
+
+    patches       ("hull_b|hull_u");
+    log           true;
+    CofR          (3.74708101 0 -0.1113924);    // Rotation around centre line of propeller
+    //pitchAxis     (0 1 0);
+    e3 (0 0 1);
+    e1 (1 0 0);
+}
+
+hull_overall_CofG_90degree
+{
+    type          forceMultiphase;
+    libs          (forces);
+
+    writeControl  timeStep;
+    timeInterval  1;
+
+    patches       ("hull_b|hull_u");
+    log           true;
+    CofR          (3.74708101 0 -0.1113924);    // Rotation around centre line of propeller
+    e3 (0 0 1);
+    e1 (0 -1 0);
+    //pitchAxis     (0 1 0);
+    
+}
+
+hull_overall_origin
+{
+    type          forceMultiphase;
+    libs          (forces);
+
+    //writeControl  timeStep;
+    //timeInterval  1;
+
+    patches       ("hull_b|hull_u");
+    log           true;
+    CofR          (0 0 0);    // Rotation around centre line of propeller
+    //pitchAxis     (0 1 0);
+        e3 (0 0 1);
+    e1 (1 0 0);
+}
+
+
+hull_overall_origin_90degree
+{
+    type          forceMultiphase;
+    libs          (forces);
+
+    //writeControl  timeStep;
+    //timeInterval  1;
+
+    patches       ("hull_b|hull_u");
+    log           true;
+    CofR          (0 0 0);    // Rotation around centre line of propeller
+        e3 (0 0 1);
+    e1 (0 -1 0);
+    //pitchAxis     (0 1 0);
+}
+// ************************************************************************* //

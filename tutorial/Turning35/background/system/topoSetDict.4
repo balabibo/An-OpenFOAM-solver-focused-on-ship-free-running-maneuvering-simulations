@@ -1,0 +1,47 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      topoSetDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+scale    2.7;
+
+xminn -0.15;
+yminn -0.2;
+zminn -0.15;
+xmaxx 1.2;
+ymaxx 0.2;
+zmaxx 0.15;
+
+xmin #eval{$xminn*$scale};
+ymin #eval{$yminn*$scale};
+zmin #eval{$zminn*$scale};
+xmax #eval{$xmaxx*$scale};
+ymax #eval{$ymaxx*$scale};
+zmax #eval{$zmaxx*$scale};
+
+actions
+(
+    
+    {
+        name    refineSet;
+        type    cellSet;
+        action  new;
+        source  boxToCell;
+        min     ( $xmin $ymin $zmin );
+        max     ( $xmax $ymax $zmax );
+    }
+   
+);
+
+// ************************************************************************* //

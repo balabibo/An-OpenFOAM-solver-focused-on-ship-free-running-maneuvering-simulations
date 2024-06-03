@@ -1,0 +1,96 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+    default         CrankNicolson 0; // 0 Euler scheme first order; 1 pure Crank-Nicolson second order
+}
+
+gradSchemes
+{
+    default        cellLimited Gauss linear 1; // 0 turn off gradient limiter higher accuarcy may be unbounded
+    grad(p_rgh)    cellLimited Gauss linear 0.5; // 1 always turn on gradient limiter lower accuarcy gain stability
+    //limitedGrad    cellLimited Gauss linear 1;
+    //grad(U)        cellMDLimited Gauss linear 1.0;
+}
+
+divSchemes
+{
+    default        none;
+    //div(rhoPhi,U)       Gauss linearUpwindV default;
+    div(rhoPhi,U)       Gauss linearUpwind grad(U); //When you use linearUpwind and LUST for div(phi,U), you need to tell OpenFOAM how to compute the velocity gradient or grad(U)
+    div(phi,alpha)      Gauss vanLeer;
+    div(phirb,alpha)    Gauss linear;
+
+    //turbulence          Gauss linearUpwind limitedGrad;
+    turbulence          Gauss linearUpwind default;
+    div(phi,k)          $turbulence;
+    div(phi,omega)      $turbulence;
+    div(phi,epsilon)    $turbulence;
+
+    div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
+}
+
+laplacianSchemes
+{
+    default         Gauss linear limited 1; // rely on quality of mesh; 0 refer to uncorrected with lower accuracy; 1 refer to corrected with higher accuracy needing high quality of mesh
+}
+
+interpolationSchemes
+{
+    default         linear; // never changed
+}
+
+snGradSchemes
+{
+    default         limited 1; // same method as the one in laplacianSchemes
+}
+
+fluxRequired
+{
+    default         no;
+    pcorr           ;
+    p               ;
+    yPsi            ;
+}
+
+oversetInterpolation
+{
+   method           trackingInverseDistance;
+
+   searchBoxDivisions
+   (
+        (500 500 500)
+        (500 500 500)
+        (500 500 500)
+    );
+    holeLayers          2;
+    useLayer            1; // let the fringe cell away from the wall
+}
+
+oversetInterpolationSuppressed
+{
+    grad(p_rgh);
+    surfaceIntegrate(phiHbyA);
+}
+
+wallDist
+{
+    method          Poisson;
+}
+
+
+// ************************************************************************* //

@@ -1,0 +1,74 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      nut;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 2 -1 0 0 0 0];
+
+internalField   uniform 9.31E-06;
+
+boundaryField
+{
+    #includeEtc "caseDicts/setConstraintTypes"
+/*
+    outlet
+    {
+        type            calculated;
+        value           $internalField;
+    }
+
+    "(atmosphere|inlet)"
+    {
+        type            calculated;
+        value           $internalField;
+    }
+
+    "(hull*.*|rudder)"
+    {
+        type            nutkWallFunction;
+        value           $internalField;
+    }
+*/
+    inlet
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+
+    outlet
+    {
+        type            zeroGradient;
+    }
+
+    atmosphere
+    {
+        type            zeroGradient;
+    }
+
+    "(hull*.*|rudder)"
+    {
+        type            nutUSpaldingWallFunction;
+        //Ks              uniform 100e-6;
+        //Cs              uniform 0.5;
+        value           $internalField;
+    }
+    
+    "(overset-1|overset-2)"
+    {
+        type           overset;
+    }
+}
+
+
+// ************************************************************************* //

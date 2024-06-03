@@ -1,0 +1,51 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2312                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    arch        "LSB;label=32;scalar=64";
+    class       dictionary;
+    location    "10/uniform";
+    object      maneuvers;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+control1
+{
+    type            sailing;
+    refBody         hull;
+    actBody         disk1;
+    controllerStartTime 0;
+    controllerEndTime 1000;
+    controllerP     10000;
+    controllerI     40;
+    controllerD     0;
+    controllerTarget 1.3381;
+    controllerMax   116.99;
+    controllerMin   116.99;
+    oldError        -0.00046778228;
+    errorIntegral   3.049836;
+    outputSignal    117.31562;
+}
+
+control2
+{
+    type            turning;
+    refBody         hull;
+    actBody         rudder;
+    controllerStartTime  15;
+    controllerEndTime 1000;
+    controllerYawAngle 270;
+    controllerRudder 35;
+    controllerRate  35;
+    outputSignal    0;
+}
+
+
+// ************************************************************************* //

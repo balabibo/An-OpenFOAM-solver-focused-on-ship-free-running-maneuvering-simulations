@@ -1,0 +1,44 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version         2.0;
+    format          ascii;
+    class           dictionary;
+    object          fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+damp
+{
+    type            velocityDampingConstraint;
+    active          true;
+    selectionMode   all;
+    UMax            14;
+}
+
+disk1
+{
+
+    type            oumSource;
+    refBody         hull;
+    actBody         disk1;
+    rotationDir  1;
+    chordCoeff (6.2575 -36.837 125.59 -226.05 201.38 -70.321);  //从左到右，常数项到5次项
+    pitchCoeff (21.437 -108.69 295.87 -430.02 312.63 -89.56);   //从左到右，常数项到5次项
+    diskRadius    0.0465; 
+    diskHub        0.186;
+    diskDir         (-1 0 0);
+    diskOrigin     (2.65275 0 -0.078651);
+    diskThickness    0.01897182;
+    bladeNumber             5;
+    diskRPS            19.31970308;
+   
+}
+
+// ************************************************************************* //

@@ -1,0 +1,51 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+./Allclean
+
+./Allrun.pre
+
+restore0Dir
+
+touch case.foam
+
+runApplication -s 1 \
+    mergeMeshes . ../hull -overwrite
+
+runApplication -s 2 \
+    mergeMeshes . ../rudder -overwrite
+
+runApplication -s 6 topoSet
+
+runApplication -s 1 setFields -dict system/setFieldsDict.1
+
+runApplication -s 2 setFields -dict system/setFieldsDict.2
+
+runApplication -s 7 \
+    topoSet -dict system/topoSetDict.cHullRudder
+
+runApplication decomposePar -force
+
+cp ./system/controlDict.propulsion controlDict
+cp ./constant/dynamicMeshDict.propulsion dynamicMeshDict
+
+mpirun -np 8 overInterDyMFoam -parallel | tee self.log
+
+rm ./system/controlDict
+
+rm ./constant/dynamicMeshDict
+
+cp ./system/controlDict.turning controlDict
+cp ./system/dynamicMeshDict.turning dynamicMeshDict
+
+cp maneuvers ./processor0/10/uniform
+
+mpirun -np 8 overInterDyMFoam -parallel | tee turning.log
+
+#runParallel $(getApplication) >> o.log
+
+#runParallel redistributePar -reconstruct -overwrite
+
+#------------------------------------------------------------------------------
