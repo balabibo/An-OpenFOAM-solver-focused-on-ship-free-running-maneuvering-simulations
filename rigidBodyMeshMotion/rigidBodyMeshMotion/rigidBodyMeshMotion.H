@@ -151,7 +151,13 @@ class rigidBodyMeshMotion
         // label bodyIdCofG_;
         //- Name of the body to write CofG displacement
         word bodyIdCofG_;
-        
+
+        //-output oum forces for post-processing 
+        PtrList<functionObjects::writeFile> oumFile_;
+
+        //- oum name
+        PtrList<word> oumName_;
+
         //-output rigid body motions for post-processing 
         PtrList<functionObjects::writeFile> bodyMotionsOs_;
 

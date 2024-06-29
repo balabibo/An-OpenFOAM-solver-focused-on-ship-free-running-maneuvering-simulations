@@ -168,10 +168,10 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
         Info<<nl<<"*********************"<<nl<<"reading maneuvers dictionary!"<<nl<<maneuversDict<<endl;
     }
 
-    static PtrList<uniformDimensionedScalarField> outputValue_;
-    static PtrList<uniformDimensionedVectorField> vectorofR_;
-    static PtrList<uniformDimensionedVectorField> vcenterofR_;
-    static PtrList<uniformDimensionedTensorField> transformCofR_;
+    static PtrList<uniformDimensionedScalarField> outputValue;
+    static PtrList<uniformDimensionedVectorField> vectorofR;
+    static PtrList<uniformDimensionedVectorField> vcenterofR;
+    static PtrList<uniformDimensionedTensorField> transformCofR;
     for (const entry& dEntry : maneuversDict)
     {
         if(dEntry.isDict())
@@ -187,8 +187,33 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
             );
             if(clDict.get<word>("type") == "sailing")
             {
+                bool oumFlag = true;
+                for(label i = 0; i < model_.nBodies(); i++)
+                {
+                    if(model_.name(i) == clDict.get<word>("actBody"))
+                    {
+                        oumFlag = false;
+                    }
+                }
+                if(oumFlag)
+                {
+                    oumFile_.append
+                    (
+                        new functionObjects::writeFile
+                        (
+                            mesh,
+                            clDict.get<word>("actBody") + "Dynamics",
+                            clDict.get<word>("actBody") + "Dynamics",
+                            dict
+                        )
+                    );
+                    oumName_.append
+                    (
+                        new word(clDict.get<word>("actBody"))
+                    );
+                }
                 
-                outputValue_.append
+                outputValue.append
                 (
                     new uniformDimensionedScalarField
                     (
@@ -206,7 +231,7 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
 
                 );
 
-                vcenterofR_.append
+                vcenterofR.append
                 (
                     new uniformDimensionedVectorField
                     (
@@ -224,7 +249,7 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
 
                 );
 
-                vectorofR_.append
+                vectorofR.append
                 (
                     new uniformDimensionedVectorField
                     (
@@ -242,7 +267,7 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
 
                 );
 
-                transformCofR_.append
+                transformCofR.append
                 (
                     new uniformDimensionedTensorField
                     (
@@ -264,6 +289,14 @@ Foam::rigidBodyMeshMotion::rigidBodyMeshMotion
         }
     }
     
+    forAll(oumFile_, oi)
+    {
+        Ostream& os = oumFile_[oi].file();
+        os<<"Time"<<tab;
+        for(label i =1; i<= 6; i++)
+            os<<"total"<<i<<tab;
+        os<<endl;
+    }
 
     const dictionary& bodiesDict = coeffDict().subDict("bodies");
 
@@ -456,7 +489,7 @@ void Foam::rigidBodyMeshMotion::actControl(const word& actBody, const word& refB
         if(bodyMeshes_[bi].name_ == actBody)
         {
             positionDof = bi+1;
-            Info<<nl<<""<<model_.state().qDot()[model_.detailDof(positionDof)[controlType]]<<endl;
+            // Info<<nl<<""<<model_.state().qDot()[model_.detailDof(positionDof)[controlType]]<<endl;
             model_.state().qDot()[model_.detailDof(positionDof)[controlType]] = output;
 
             Info<<nl<<"*****************"<<"outputControl = "<<output<<"*************"<<endl;
@@ -759,6 +792,53 @@ void Foam::rigidBodyMeshMotion::solve()
                 os<<pressFM[i]<<tab;
             for(label i =0; i< 6; i++)
                 os<<viscoFM[i]<<tab;
+            os<<endl;
+        }
+    }
+
+    forAll(oumFile_, oi)
+    {
+        vector translation = model_.cCofR(model_.bodyID(bodyIdCofG_));
+        scalar rotationA = 0.0;
+        if
+        (
+            db().time().foundObject<uniformDimensionedVectorField>
+            (
+                cOfGdisplacement_ + "3Dof"
+            )
+        )
+        {
+            auto& rotationRef = db().time().lookupObject<uniformDimensionedVectorField>(cOfGdisplacement_ + "3Dof");
+            rotationA = -1.0*rotationRef.value()[2]; // 
+        }
+        tensor rotationMatrix(cos(rotationA), -1*sin(rotationA), 0, sin(rotationA), cos(rotationA), 0, 0, 0, 1);
+        spatialTransform transformDual(rotationMatrix, translation);
+        spatialVector oumForce(Zero, Zero);
+        if
+        (
+            mesh().time().foundObject<uniformDimensionedSymmTensorField>
+            (
+                oumName_[oi] + "sourceForce"
+            )
+        )
+        
+        {
+            auto& fxx =
+                mesh().time().lookupObjectRef<uniformDimensionedSymmTensorField>
+                (
+                    oumName_[oi] + "sourceForce"
+                );
+            for(label i =0; i < 6; i++)    
+            oumForce[i] = fxx.value()[i];
+        }
+        spatialVector totalFM = spatialTransform::dual(transformDual) & oumForce;
+        if (Pstream::master() && model_.report())
+        {
+            Ostream& os = oumFile_[oi].file();
+            oumFile_[oi].writeCurrentTime(os);
+            os<<tab;
+            for(label i =0; i< 6; i++)
+                os<<totalFM[i]<<tab;
             os<<endl;
         }
     }
