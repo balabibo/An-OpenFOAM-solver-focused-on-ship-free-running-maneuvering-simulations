@@ -324,7 +324,7 @@ DynamicList<label> Foam::fv::oumSource::updateCells()
             if(cellTypes[cellI] < 0.5)
             {
                 scalar dNormal = R[cellI] * (rHat[cellI] & diskDir_);
-                scalar dRadial = sqrt(pow(R[cellI], 2.) - pow(dNormal, 2.)); 
+                scalar dRadial = sqrt(fabs(pow(R[cellI], 2.) - pow(dNormal, 2.))); 
                 if
                 (
                     (fabs(dNormal) < diskThick_/2.) 
@@ -349,7 +349,7 @@ DynamicList<label> Foam::fv::oumSource::updateCells()
         {
             // determine distance from cell centre to disk axis and along the normal direction
             scalar dNormal = R[cellI] * (rHat[cellI] & diskDir_);
-            scalar dRadial = sqrt(pow(R[cellI], 2.) - pow(dNormal, 2.));
+            scalar dRadial = sqrt(fabs(pow(R[cellI], 2.) - pow(dNormal, 2.)));
 
             // see if the cell is within tolerance from the centre of the disk
             if ((fabs(dNormal) < diskThick_/2.) && (dRadial < diskR_) && (dRadial > diskH_*diskR_))
