@@ -143,17 +143,17 @@ zigzagControl::zigzagControl(const dictionary &dict)
 scalar zigzagControl::calculate(scalar currentYaw, const scalar deltaT)
 {
     Info<<nl<<"zigzagControl is running!!"<<nl;
-    if(oldYaw_ < fabs(cTarget_) && currentYaw >= fabs(cTarget_))
+    if(oldYaw_*M_PI/180 < fabs(cTarget_)*M_PI/180 && currentYaw*M_PI/180 >= fabs(cTarget_)*M_PI/180)
     {
        cRate_ = -1*fabs(cRate_);
     }
        
-    else if(oldYaw_ > -1*fabs(cTarget_) && currentYaw <= -1*fabs(cTarget_))
+    else if(oldYaw_*M_PI/180 > -1*fabs(cTarget_)*M_PI/180 && currentYaw*M_PI/180 <= -1*fabs(cTarget_)*M_PI/180)
     {
        cRate_ = fabs(cRate_);      
     } 
        
-    outputSignal_ += cRate_*deltaT;
+    outputSignal_ += cRate_*M_PI/180*deltaT;
     
     if(outputSignal_ >= fabs(cMax_))
     {
@@ -172,7 +172,7 @@ scalar zigzagControl::calculate(scalar currentYaw, const scalar deltaT)
     oldYaw_ = currentYaw;
     
     //return outputSignal_;
-    return cRate_;
+    return cRate_*M_PI/180;
 }
 
 void zigzagControl::write(Ostream &os) const
