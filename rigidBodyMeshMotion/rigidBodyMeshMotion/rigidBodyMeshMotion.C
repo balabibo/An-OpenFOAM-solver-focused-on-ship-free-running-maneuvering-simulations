@@ -465,18 +465,29 @@ Foam::rigidBodyMeshMotion::curPoints() const
     }
 }
 
-const vector2D Foam::rigidBodyMeshMotion::acquireInput(const word &refBody)
+const vector2D Foam::rigidBodyMeshMotion::acquireInput(const word& refBody, const label& controlType)
 {
     vector2D sailingState(Zero);
     sailingState[0] = this->model_.v(this->model_.bodyID(refBody), Zero)[3]; // sailing velocity along x axis
-    for (label i=0; i< this->model_.nDoF(); i++)
+    // for (label i=0; i< this->model_.nDoF(); i++)
+    // {
+    //     Info<<this->model_.v(this->model_.bodyID(refBody), Zero)[2]<<nl
+    //         <<this->model_.state().qDot()[i]
+    //         <<endl;
+    //     if (this->model_.v(this->model_.bodyID(refBody), Zero)[2] == this->model_.state().qDot()[i])
+    //     {
+    //         sailingState[1] = this->model_.state().q()[i]; // yaw angle along z axis
+    //     }
+    // }
+    label positionDof = 0;
+    forAll(bodyMeshes_, bi)
     {
-        if (this->model_.v(this->model_.bodyID(refBody), Zero)[2] == this->model_.state().qDot()[i])
+        if(bodyMeshes_[bi].name_ == refBody)
         {
-            sailingState[1] = this->model_.state().q()[i]; // yaw angle along z axis
+            positionDof = bi+1;
+            sailingState[1] = model_.state().q()[model_.detailDof(positionDof)[controlType]];
         }
     }
-
     return sailingState;  
 
 }
@@ -627,7 +638,7 @@ void Foam::rigidBodyMeshMotion::solve()
             const word refBody = maneuveringOutput_[bi].mInput()->refBody();
             const word actBody = maneuveringOutput_[bi].mInput()->actBody();
             const label controlType = maneuveringOutput_[bi].mInput()->controlType();
-            const scalar output = maneuveringOutput_[bi].output(this->acquireInput(refBody));
+            const scalar output = maneuveringOutput_[bi].output(this->acquireInput(refBody, controlType));
             bool meshFlag = true;
             for(label i = 0; i < model_.nBodies(); i++)
             {

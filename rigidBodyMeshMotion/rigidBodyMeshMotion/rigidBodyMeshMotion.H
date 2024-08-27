@@ -208,7 +208,7 @@ public:
         virtual tmp<pointField> curPoints() const;
 
         //- acquire the rigid body's sailing velocity along x axis and yaw angle along z axis 
-        const vector2D acquireInput(const word& refBody);
+        const vector2D acquireInput(const word& refBody, const label& controlType);
 
         //- alter the motions of objective rigid body
         void actControl(const word& actBody, const word& refBody, const label& controlType, const scalar& output);
