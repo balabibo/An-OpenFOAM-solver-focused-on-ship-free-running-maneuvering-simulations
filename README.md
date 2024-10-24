@@ -3,7 +3,7 @@
 Summary
 
 These modifications are based on the "overInterDyMFoam" solver in OpenFOAM v2206.
-There are several modules which were modified or added, and its general funtion is realizing the maneuvering motions of ship.
+There are several modules which were modified or added, and its general function is realizing the maneuvering motions of ship.
 A 35 degree turning tutorial has been updated.
 
 Functions
