@@ -38,7 +38,7 @@ rm ./system/controlDict
 rm ./constant/dynamicMeshDict
 
 cp ./system/controlDict.turning controlDict
-cp ./system/dynamicMeshDict.turning dynamicMeshDict
+cp ./constant/dynamicMeshDict.turning dynamicMeshDict
 
 cp maneuvers ./processor0/10/uniform
 
