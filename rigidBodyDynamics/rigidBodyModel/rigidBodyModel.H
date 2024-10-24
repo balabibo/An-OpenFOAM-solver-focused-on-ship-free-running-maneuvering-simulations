@@ -137,7 +137,7 @@ protected:
         label nDoF_;
 
         //-Declare the relationship between Dof and bodyMeshes_'s joint (in rigidMeshMotion.H)
-        DynamicList<spatialVector>detailDof_;
+        DynamicList<spatialVector> detailDof_;
 
         //- True if any of the joints using quaternions
         bool unitQuaternions_;
