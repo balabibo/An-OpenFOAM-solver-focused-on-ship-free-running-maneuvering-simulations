@@ -143,17 +143,22 @@ zigzagControl::zigzagControl(const dictionary &dict)
 scalar zigzagControl::calculate(scalar currentYaw, const scalar deltaT)
 {
     Info<<nl<<"zigzagControl is running!!"<<nl;
-    if(oldYaw_*M_PI/180 < fabs(cTarget_)*M_PI/180 && currentYaw*M_PI/180 >= fabs(cTarget_)*M_PI/180)
+    if
+    (oldYaw_ < fabs(cTarget_)*M_PI/180 && currentYaw >= fabs(cTarget_)*M_PI/180)
     {
-       cRate_ = -1*fabs(cRate_);
+       cRate_ = fabs(cRate_);
     }
        
-    else if(oldYaw_*M_PI/180 > -1*fabs(cTarget_)*M_PI/180 && currentYaw*M_PI/180 <= -1*fabs(cTarget_)*M_PI/180)
+    else if
+    (oldYaw_ > -1*fabs(cTarget_)*M_PI/180 && currentYaw <= -1*fabs(cTarget_)*M_PI/180)
     {
-       cRate_ = fabs(cRate_);      
+       cRate_ = -1*fabs(cRate_);      
     } 
        
-    outputSignal_ += cRate_*M_PI/180*deltaT;
+    outputSignal_ += cRate_*deltaT;
+
+    Info<<"currentYaw = "<<currentYaw*180/M_PI<<nl
+        <<"outputSignal_ = "<<outputSignal_<<endl;
     
     if(outputSignal_ >= fabs(cMax_))
     {
@@ -229,7 +234,7 @@ scalar sailingControl::calculate(scalar currentV, scalar deltaT)
 
     // Calculate increased output RPS value
 
-    const scalar increasedOutputSignal = P_*error + I_*errorIntegral_ + D_*errorDifferential;
+    const scalar increasedOutputSignal = P_*180/M_PI*error + I_*errorIntegral_ + D_*errorDifferential;
     outputSignal_ = increasedOutputSignal;
     
     // Return result within defined regulator saturation: outputMax_ and outputMin_
@@ -269,41 +274,46 @@ coursekeepingControl::coursekeepingControl(const dictionary &dict)
 : 
     controlMethod(dict),
     P_(dict.getOrDefault<scalar>("controllerP", 1.)),
-    I_(dict.getOrDefault<scalar>("controllerI", 1.)),
-    D_(dict.getOrDefault<scalar>("controllerD", 0.)),
+    I_(dict.getOrDefault<scalar>("controllerI", 0.)),
+    D_(dict.getOrDefault<scalar>("controllerD", 1.)),
     cTarget_(dict.getOrDefault<scalar>("controllerTarget", 0.)),
-    cRate_(dict.getOrDefault<scalar>("controllerRate", 5.)),
-    outputMax_(dict.getOrDefault<scalar>("controllerMax", 35.)),//Maximum of rudder rate
-    outputMin_(dict.getOrDefault<scalar>("controllerMin", -35.)),////Minimum of rudder rate
-    errorMax_(16.),
-    integralErrorMax_(VGREAT),
+    maxRate_(dict.getOrDefault<scalar>("maxRuuderRate", 35.)),   //Maximum rudder rate in deg
+    maxAngle_(dict.getOrDefault<scalar>("maxRudderAngle", 35.)), //Maximum ruuder angle in deg
+    errorIntegral_(dict.getOrDefault<scalar>("errorIntegral", 0.)), 
     oldError_(dict.getOrDefault<scalar>("oldError", 0.)),
-    errorIntegral_(dict.getOrDefault<scalar>("errorIntegral", 0.)),
-    outputSignal_(dict.getOrDefault<scalar>("outputSignal", 0.))
+    oldRudderRate_(dict.getOrDefault<scalar>("oldRudderRate", 0.)),
+    oldRudderAngle_(dict.getOrDefault<scalar>("oldRudderAngle", 0.))
+
 {}
 
 scalar coursekeepingControl::calculate(scalar currentYaw, scalar deltaT)
 {
     Info<<nl<<"coursekeepingControl is running!!"<<nl;
-    scalar error = cTarget_ - currentYaw;
-    error = max(min(error, errorMax_), -errorMax_);  // Constain error according to specified errorMax
+    scalar error = cTarget_*M_PI/180 - currentYaw;
+    // error = max(min(error, errorMax_), -errorMax_);  // Constain error according to specified errorMax
     errorIntegral_ += error * deltaT;
-    errorIntegral_ = max(min(errorIntegral_, integralErrorMax_), -integralErrorMax_);
-    const scalar errorDifferential = (error - oldError_);
+    // errorIntegral_ = max(min(errorIntegral_, integralErrorMax_), -integralErrorMax_);
+    scalar errorDifferential = (error - oldError_)/deltaT;
     oldError_ = error;
 
-    // Calculate increased output RPS value
+    // Calculate output rudder rate
 
-    scalar increasedOutputSignal = P_*error + I_*errorIntegral_ + D_*errorDifferential;
-    const scalar deltaMax = fabs(deltaT*cRate_);
-    if(fabs(increasedOutputSignal)>= deltaMax)
+    scalar presentRudderAngle = P_*error + I_*errorIntegral_ + D_*errorDifferential;
+    if(fabs(presentRudderAngle) > fabs(maxAngle_)*M_PI/180)
     {
-      increasedOutputSignal = increasedOutputSignal/(fabs(increasedOutputSignal)+VSMALL)*deltaMax;
+        presentRudderAngle = presentRudderAngle/fabs(presentRudderAngle)*fabs(maxAngle_)*M_PI/180;
     }
-    //outputSignal_ += increasedOutputSignal;
-    outputSignal_ = increasedOutputSignal/deltaT;
-    // Return result within defined regulator saturation: outputMax_ and outputMin_
-    return max(min(outputSignal_, outputMax_), outputMin_);
+
+    scalar presentRudderRate  = (presentRudderAngle -oldRudderAngle_)*2.0/deltaT - oldRudderRate_;
+    if(fabs(presentRudderRate) > fabs(maxRate_)*M_PI/180)
+    {
+        presentRudderRate = presentRudderRate/fabs(presentRudderRate)*fabs(maxRate_)*M_PI/180;
+    }  
+
+    oldRudderAngle_ = presentRudderAngle;
+    oldRudderRate_  = presentRudderRate;
+    
+    return presentRudderRate;
 }
 
 void coursekeepingControl::write(Ostream &os) const
@@ -313,10 +323,10 @@ void coursekeepingControl::write(Ostream &os) const
     os.writeEntry("Kp", P_);
     os.writeEntry("Ti", I_);
     os.writeEntry("Td", D_);
-    os.writeEntryIfDifferent("outputMax", 1., outputMax_);
-    os.writeEntryIfDifferent("outputMin", 0., outputMin_);
-    os.writeEntryIfDifferent("errMax", VGREAT, errorMax_);
-    os.writeEntryIfDifferent("errIntegMax", VGREAT, integralErrorMax_);
+    // os.writeEntryIfDifferent("outputMax", 1., outputMax_);
+    // os.writeEntryIfDifferent("outputMin", 0., outputMin_);
+    // os.writeEntryIfDifferent("errMax", VGREAT, errorMax_);
+    // os.writeEntryIfDifferent("errIntegMax", VGREAT, integralErrorMax_);
     os.endBlock();
 }
 
@@ -326,12 +336,13 @@ void coursekeepingControl::write(dictionary& dict) const
     dict.add("controllerP", P_);
     dict.add("controllerI", I_);
     dict.add("controllerD", D_);
-    dict.add("controllerTarget", cTarget_);
-    dict.add("controllerRate", cRate_);
-    dict.add("controllerMax", outputMax_);
-    dict.add("controllerMin", outputMin_);
-    dict.add("oldError", oldError_);
+    dict.add("controllerTarget", cTarget_);    //in deg
+    dict.add("maxRuuderRate", maxRate_);      //in deg
+    dict.add("maxRudderAngle", maxAngle_);   //in deg
     dict.add("errorIntegral", errorIntegral_);
-    dict.add("outputSignal", outputSignal_);
+    dict.add("oldError", oldError_);
+    dict.add("oldRudderRate", oldRudderRate_);
+    dict.add("oldRudderAngle", oldRudderAngle_);
+
 }
 

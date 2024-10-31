@@ -32,6 +32,25 @@ Group
     grpFvOptionsSources
 
 Description
+    Reference to G.R. Hough, D.E. Ordway The generalized actuator disk Develop. Theor. Appl. Mech., 2 (1964), p. 42
+    
+    An example to use 
+        disk1
+        {
+            type         HOSource;
+            refBody    hull; //let the disk moves along with the rigid-body
+            actBody    disk1; //present disk name
+            rotationDir  right; // or left
+            KTCoeff (0.4873 -0.4399 0.0079 -0.0945 0 0);  // polynomial coefficients for KT-J: left to right, constant to 5th order
+            KQCoeff (0.0694 -0.0561 0.0065 -0.0189 0 0);   // polynomial coefficients for KQ-J: left to right, constant to 5th order
+            diskRadius     0.04637; 
+            diskHub        0.18;
+            diskDir         (-1 0 0);
+            diskOrigin      (0 0 0);
+            diskThickness    0.0064;
+            diskRPS           5.071;
+        
+        }
 
 SourceFiles
     HOSource.C

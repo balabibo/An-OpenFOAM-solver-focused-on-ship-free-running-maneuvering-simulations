@@ -28,9 +28,8 @@ disk1
     type            oumSource;
     refBody         hull;
     actBody         disk1;
-    rotationDir  1;
-    chordCoeff (6.2575 -36.837 125.59 -226.05 201.38 -70.321);  //从左到右，常数项到5次项
-    pitchCoeff (21.437 -108.69 295.87 -430.02 312.63 -89.56);   //从左到右，常数项到5次项
+    chordCoeff (6.2575 -36.837 125.59 -226.05 201.38 -70.321);  // polynomial coefficients for KT-J: left to right, constant to 5th order
+    pitchCoeff (21.437 -108.69 295.87 -430.02 312.63 -89.56);   // polynomial coefficients for KT-J: left to right, constant to 5th order
     diskRadius    0.0465; 
     diskHub        0.186;
     diskDir         (-1 0 0);

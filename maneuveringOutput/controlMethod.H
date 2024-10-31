@@ -178,14 +178,13 @@ private:
     scalar P_;                     // Proportional control term
     scalar I_;                     // Integral control term
     scalar D_;                     // Differential control term
-    scalar cTarget_;                // target sailing velocity
-    scalar cRate_;                  // controller rate
-    scalar outputMax_;              // Max output signal (saturation)
-    scalar outputMin_;              // Min output signal  
-    scalar errorMax_;               // Constains received absolute error value
-    scalar integralErrorMax_;       // Constains built-up integral error
-    scalar oldError_;               // Old error
+    scalar cTarget_;                // target heading angle
+    scalar maxRate_;                // maximum rudder rate
+    scalar maxAngle_;               // maximum rudder angle
+
     scalar errorIntegral_;          // Error integral w.r.t. time
-    scalar outputSignal_;           // output RPS
+    scalar oldError_;                 // old error
+    scalar oldRudderRate_;            // old rudder Rate
+    scalar oldRudderAngle_;           // old rudder angle
 };
 #endif

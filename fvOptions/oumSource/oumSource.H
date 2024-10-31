@@ -32,7 +32,26 @@ Group
     grpFvOptionsSources
 
 Description
+   Reference to TOKGOZ E. A CFD Study on the Propeller-Hull Interaction Flow in Waves Using Body-Force Distribution Model. Osaka University, 2015
+   An example to use
+        disk1
+        {
 
+            type            oumSource;
+            refBody         hull;
+            actBody         disk1;
+            chordCoeff (6.2575 -36.837 125.59 -226.05 201.38 -70.321);  // polynomial coefficients for KT-J: left to right, constant to 5th order
+            pitchCoeff (21.437 -108.69 295.87 -430.02 312.63 -89.56);   // polynomial coefficients for KT-J: left to right, constant to 5th order
+            diskRadius    0.0465; 
+            diskHub        0.186;
+            diskDir         (-1 0 0);
+            diskOrigin     (2.65275 0 -0.078651);
+            diskThickness    0.01897182;
+            bladeNumber             5;
+            diskRPS            19.31970308;
+        
+        }
+        
 SourceFiles
     oumSource.C
     oumSourceTemplates.C
