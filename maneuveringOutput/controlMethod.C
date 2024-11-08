@@ -289,7 +289,8 @@ coursekeepingControl::coursekeepingControl(const dictionary &dict)
 scalar coursekeepingControl::calculate(scalar currentYaw, scalar deltaT)
 {
     Info<<nl<<"coursekeepingControl is running!!"<<nl;
-    scalar error = cTarget_*M_PI/180 - currentYaw;
+    scalar error = currentYaw - cTarget_*M_PI/180;
+    //scalar error = cTarget_*M_PI/180 - currentYaw;
     // error = max(min(error, errorMax_), -errorMax_);  // Constain error according to specified errorMax
     errorIntegral_ += error * deltaT;
     // errorIntegral_ = max(min(errorIntegral_, integralErrorMax_), -integralErrorMax_);
@@ -308,7 +309,9 @@ scalar coursekeepingControl::calculate(scalar currentYaw, scalar deltaT)
     if(fabs(presentRudderRate) > fabs(maxRate_)*M_PI/180)
     {
         presentRudderRate = presentRudderRate/fabs(presentRudderRate)*fabs(maxRate_)*M_PI/180;
-    }  
+    }
+    
+    presentRudderAngle = oldRudderAngle_ + (oldRudderRate_ + presentRudderRate)*deltaT/2.0;
 
     oldRudderAngle_ = presentRudderAngle;
     oldRudderRate_  = presentRudderRate;
