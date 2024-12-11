@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2016 OpenFOAM Foundation
-    Copyright (C) 2015-2023 OpenCFD Ltd.
+    Copyright (C) 2015-2022 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -31,8 +31,8 @@ Group
     grpForcesFunctionObjects
 
 Description
-    Computes forces and moments over a given list of patches in a specific phase
-    by integrating pressure and viscous forces and moments, and optionally resistance forces
+    Computes forces and moments over a given list of patches by integrating
+    pressure and viscous forces and moments, and optionally resistance forces
     and moments from porous zones.
 
     Forces and moments are output in their total and constituent components:
@@ -71,7 +71,7 @@ Usage
     <namePrefix>
     {
         // Mandatory entries
-        type                forceMultiphase;
+        type                forces;
         libs                (forces);
         patches             (<wordRes>);
 
@@ -90,18 +90,19 @@ Usage
             // Cartesian coordinate system specification when
             // evaluating forces and moments, either of the below
 
-            // Define the centre of rotation
-            // with implicit directions e1=(1 0 0) and e3=(0 0 1)
+            // Option-1, i.e. the centre of rotation
+            // by inherently using e3=(0 0 1) and e1=(1 0 0)
             CofR                (0 0 0); // Centre of rotation
 
-            // Define local coordinate system by origin + axes
+            // Option-2, i.e. local coordinate system specification
             origin              (0 0 0);
             e1                  (1 0 0);
             e3                  (0 0 1); // (e1, e2) or (e2, e3) or (e3, e1)
 
-            // General coordinate system specification (always cartesian)
+            // Option-3, i.e. general coordinate system specification
             coordinateSystem
             {
+                type            cartesian;
                 origin          (0 0 0);
                 rotation
                 {
@@ -116,7 +117,8 @@ Usage
             // if directForceDensity == false
             p               <word>;
             U               <word>;
-            phase           <word>;
+            rho             <word>;
+            rhoInf          <scalar>; // enabled if rho=rhoInf
             pRef            <scalar>;
 
         // Inherited entries
@@ -127,7 +129,7 @@ Usage
     where the entries mean:
     \table
       Property   | Description               | Type | Reqd    | Deflt
-      type       | Type name: forceMultiphase| word | yes     | -
+      type       | Type name: forces         | word | yes     | -
       libs       | Library name: forces      | word | yes     | -
       patches    | Names of operand patches  | wordRes | yes  | -
       directForceDensity | Flag to directly supply force density <!--
@@ -135,15 +137,16 @@ Usage
       porosity   | Flag to include porosity contributions | bool | no | false
       writeFields | Flag to write force and moment fields | bool | no | false
       useNamePrefix | Flag to include prefix for field names | bool | no | false
-      coordinateSystem | Coordinate system specifier | dictionary | cndtnl | -
       CofR    | Centre of rotation          | vector | cndtnl   | -
       origin  | Origin of coordinate system | vector | cndtnl   | -
       e3      | e3 coordinate axis          | vector | cndtnl   | -
       e1      | e1 coordinate axis          | vector | cndtnl   | -
+      coordinateSystem | Coordinate system specifier | dictionary | cndtnl | -
       fD      | Name of force density field | word   | cndtnl   | -
       p       | Name of pressure field      | word   | cndtnl   | p
       U       | Name of velocity field      | word   | cndtnl   | U
-      phase   | Name of phase where forces are caculated | word | cndtnl | water
+      rho     | Name of density field       | word   | cndtnl   | rho
+      rhoInf  | Value of reference density  | scalar | cndtnl   | -
       pRef    | Value of reference pressure | scalar | cndtnl   | 0
     \endtable
 
@@ -153,12 +156,11 @@ Usage
       - \link coordinateSystem.H \endlink
 
 Note
-  - For water-air multiphase flow case, if you want to caculate forces and moments
-    only on patch immerged in water phase, you can set \c phase to \c water, or set
-    \c phase to \c air to caculate the forces and moments in air phase only.
+  - For incompressible cases, set \c rho to \c rhoInf.
+    You will then be required to provide a \c rhoInf
+    value corresponding to the constant freestream density.
   - \c writeControl and \c writeInterval entries of function
     object do control when to output force and moment files and fields.
-  - If a \c coordinateSystem entry exists, it is taken in favour of \c CofR.
 
 SourceFiles
     forceMultiphase.C
@@ -229,8 +231,8 @@ protected:
             //- Coordinate system used when evaluating forces and moments
             autoPtr<coordinateSystem> coordSysPtr_;
 
-            //- Selected operand patches
-            labelList patchIDs_;
+            //- Names of operand patches
+            labelHashSet patchSet_;
 
             //- Reference density needed for incompressible calculations
             scalar rhoRef_;
@@ -261,13 +263,12 @@ protected:
 
             //- Flag of initialisation (internal)
             bool initialised_;
-
+            
             //-Name of phase where forces and moments would be caculated
             word phaseName_;
-
+ 
             //-Area of patch where forces and moments would be caculated
             scalar patchArea_;
-
 
     // Protected Member Functions
 
@@ -291,24 +292,16 @@ protected:
         //- Reset containers and fields
         void reset();
 
-
     // Evaluation
 
-        //- Return the effective stress (viscous + turbulent) for patch
-        tmp<symmTensorField> devRhoReff
-        (
-            const tensorField& gradUp,
-            const label patchi
-        ) const;
+        //- Return the effective stress (viscous + turbulent)
+        tmp<volSymmTensorField> devRhoReff() const;
 
         //- Return dynamic viscosity field
         tmp<volScalarField> mu() const;
 
         //- Return rho if specified otherwise rhoRef
         tmp<volScalarField> rho() const;
-
-        //- Return rho if specified otherwise rhoRef for patch
-        tmp<scalarField> rho(const label patchi) const;
 
         //- Return rhoRef if the pressure field is
         //- dynamic (i.e. p/rho), otherwise return 1
@@ -406,9 +399,22 @@ public:
 
     // Member Functions
 
+
         //-Return the area of patch on specific phase
         scalar patchArea() const;
-        
+         
+        //-Return the pressure force
+        virtual vector pressureForceEff() const;
+ 
+        //-Return the voscous force
+        virtual vector viscousForceEff() const; 
+
+        //-Return the pressure force
+        virtual vector pressureMomentEff() const;
+ 
+        //-Return the viscous force
+        virtual vector viscousMomentEff() const;
+
         //- Read the dictionary
         virtual bool read(const dictionary& dict);
 
@@ -418,20 +424,8 @@ public:
         //- Return the total force
         virtual vector forceEff() const;
 
-        //-Return the pressure force
-        virtual vector pressureForceEff() const;
-
-        //-Return the voscous force
-        virtual vector viscousForceEff() const;
-
         //- Return the total moment
         virtual vector momentEff() const;
-
-        //-Return the pressure force
-        virtual vector pressureMomentEff() const;
-
-        //-Return the voscous force
-        virtual vector viscousMomentEff() const;
 
         //- Execute the function object
         virtual bool execute();

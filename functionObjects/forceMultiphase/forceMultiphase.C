@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2016 OpenFOAM Foundation
-    Copyright (C) 2015-2023 OpenCFD Ltd.
+    Copyright (C) 2015-2022 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -55,35 +55,38 @@ void Foam::functionObjects::forceMultiphase::setCoordinateSystem
     const word& e1Name
 )
 {
+    coordSysPtr_.clear();
+
     point origin(Zero);
-
-    // With objectRegistry for access to indirect (global) coordinate systems
-    coordSysPtr_ = coordinateSystem::NewIfPresent(obr_, dict);
-
-    if (coordSysPtr_)
+    if (dict.readIfPresent<point>("CofR", origin))
     {
-        // Report ...
-    }
-    else if (dict.readIfPresent("CofR", origin))
-    {
-        const vector e3
-        (
-            e3Name.empty() ? vector(0, 0, 1) : dict.get<vector>(e3Name)
-        );
-        const vector e1
-        (
-            e1Name.empty() ? vector(1, 0, 0) : dict.get<vector>(e1Name)
-        );
-        // const vector e3(dict.getOrDefault("e3", vector(0, 0, 1)));
-        // const vector e1(dict.getOrDefault("e1", vector(1, 0, 0)));
+        const vector e3 = e3Name == word::null ?
+            vector(0, 0, 1) : dict.get<vector>(e3Name);
+        const vector e1 = e1Name == word::null ?
+            vector(1, 0, 0) : dict.get<vector>(e1Name);
+
         coordSysPtr_.reset(new coordSystem::cartesian(origin, e3, e1));
     }
     else
     {
-        // No 'coordinateSystem' or 'CofR'
-        // - enforce a cartesian system
+        // The 'coordinateSystem' sub-dictionary is optional,
+        // but enforce use of a cartesian system if not found.
 
-        coordSysPtr_.reset(new coordSystem::cartesian(dict));
+        if (dict.found(coordinateSystem::typeName_()))
+        {
+            // New() for access to indirect (global) coordinate system
+            coordSysPtr_ =
+                coordinateSystem::New
+                (
+                    obr_,
+                    dict,
+                    coordinateSystem::typeName_()
+                );
+        }
+        else
+        {
+            coordSysPtr_.reset(new coordSystem::cartesian(dict));
+        }
     }
 }
 
@@ -102,8 +105,7 @@ Foam::volVectorField& Foam::functionObjects::forceMultiphase::force()
                 time_.timeName(),
                 mesh_,
                 IOobject::NO_READ,
-                IOobject::NO_WRITE,
-                IOobject::REGISTER
+                IOobject::NO_WRITE
             ),
             mesh_,
             dimensionedVector(dimForce, Zero)
@@ -130,8 +132,7 @@ Foam::volVectorField& Foam::functionObjects::forceMultiphase::moment()
                 time_.timeName(),
                 mesh_,
                 IOobject::NO_READ,
-                IOobject::NO_WRITE,
-                IOobject::REGISTER
+                IOobject::NO_WRITE
             ),
             mesh_,
             dimensionedVector(dimForce*dimLength, Zero)
@@ -198,60 +199,47 @@ void Foam::functionObjects::forceMultiphase::reset()
 
     auto& force = this->force();
     auto& moment = this->moment();
-
-    if (porosity_)
-    {
-        force == dimensionedVector(force.dimensions(), Zero);
-        moment == dimensionedVector(moment.dimensions(), Zero);
-    }
-    else
-    {
-        constexpr bool updateAccessTime = false;
-        for (const label patchi : patchIDs_)
-        {
-            force.boundaryFieldRef(updateAccessTime)[patchi] = Zero;
-            moment.boundaryFieldRef(updateAccessTime)[patchi] = Zero;
-        }
-    }
+    force == dimensionedVector(force.dimensions(), Zero);
+    moment == dimensionedVector(moment.dimensions(), Zero);
 }
 
 
-Foam::tmp<Foam::symmTensorField>
-Foam::functionObjects::forceMultiphase::devRhoReff
-(
-    const tensorField& gradUp,
-    const label patchi
-) const
+Foam::tmp<Foam::volSymmTensorField>
+Foam::functionObjects::forceMultiphase::devRhoReff() const
 {
-    typedef incompressible::turbulenceModel icoTurbModel;
     typedef compressible::turbulenceModel cmpTurbModel;
+    typedef incompressible::turbulenceModel icoTurbModel;
 
-    if (foundObject<icoTurbModel>(icoTurbModel::propertiesName))
-    {
-        const auto& turb =
-            lookupObject<icoTurbModel>(icoTurbModel::propertiesName);
-
-        return -rho(patchi)*turb.nuEff(patchi)*devTwoSymm(gradUp);
-    }
-    else if (foundObject<cmpTurbModel>(cmpTurbModel::propertiesName))
+    if (foundObject<cmpTurbModel>(cmpTurbModel::propertiesName))
     {
         const auto& turb =
             lookupObject<cmpTurbModel>(cmpTurbModel::propertiesName);
 
-        return -turb.muEff(patchi)*devTwoSymm(gradUp);
+        return turb.devRhoReff();
+    }
+    else if (foundObject<icoTurbModel>(icoTurbModel::propertiesName))
+    {
+        const auto& turb =
+            lookupObject<icoTurbModel>(icoTurbModel::propertiesName);
+
+        return rho()*turb.devReff();
     }
     else if (foundObject<fluidThermo>(fluidThermo::dictName))
     {
         const auto& thermo = lookupObject<fluidThermo>(fluidThermo::dictName);
 
-        return -thermo.mu(patchi)*devTwoSymm(gradUp);
+        const auto& U = lookupObject<volVectorField>(UName_);
+
+        return -thermo.mu()*dev(twoSymm(fvc::grad(U)));
     }
     else if (foundObject<transportModel>("transportProperties"))
     {
         const auto& laminarT =
             lookupObject<transportModel>("transportProperties");
 
-        return -rho(patchi)*laminarT.nu(patchi)*devTwoSymm(gradUp);
+        const auto& U = lookupObject<volVectorField>(UName_);
+
+        return -rho()*laminarT.nu()*dev(twoSymm(fvc::grad(U)));
     }
     else if (foundObject<dictionary>("transportProperties"))
     {
@@ -260,7 +248,9 @@ Foam::functionObjects::forceMultiphase::devRhoReff
 
         const dimensionedScalar nu("nu", dimViscosity, transportProperties);
 
-        return -rho(patchi)*nu.value()*devTwoSymm(gradUp);
+        const auto& U = lookupObject<volVectorField>(UName_);
+
+        return -rho()*nu*dev(twoSymm(fvc::grad(U)));
     }
     else
     {
@@ -329,23 +319,6 @@ Foam::tmp<Foam::volScalarField> Foam::functionObjects::forceMultiphase::rho() co
 }
 
 
-Foam::tmp<Foam::scalarField>
-Foam::functionObjects::forceMultiphase::rho(const label patchi) const
-{
-    if (rhoName_ == "rhoInf")
-    {
-        return tmp<scalarField>::New
-        (
-            mesh_.boundary()[patchi].size(),
-            rhoRef_
-        );
-    }
-
-    const auto& rho = lookupObject<volScalarField>(rhoName_);
-    return rho.boundaryField()[patchi];
-}
-
-
 Foam::scalar Foam::functionObjects::forceMultiphase::rho(const volScalarField& p) const
 {
     if (p.dimensions() == dimPressure)
@@ -372,18 +345,16 @@ void Foam::functionObjects::forceMultiphase::addToPatchFields
     const vectorField& fV
 )
 {
-    constexpr bool updateAccessTime = false;
-
     sumPatchForcesP_ += sum(fP);
     sumPatchForcesV_ += sum(fV);
-    force().boundaryFieldRef(updateAccessTime)[patchi] += fP + fV;
+    force().boundaryFieldRef()[patchi] += fP + fV;
 
     const vectorField mP(Md^fP);
     const vectorField mV(Md^fV);
 
     sumPatchMomentsP_ += sum(mP);
     sumPatchMomentsV_ += sum(mV);
-    moment().boundaryFieldRef(updateAccessTime)[patchi] += mP + mV;
+    moment().boundaryFieldRef()[patchi] += mP + mV;
 }
 
 
@@ -413,15 +384,15 @@ void Foam::functionObjects::forceMultiphase::addToInternalField
 
 void Foam::functionObjects::forceMultiphase::createIntegratedDataFiles()
 {
-    if (!forceFilePtr_)
+    if (!forceFilePtr_.valid())
     {
-        forceFilePtr_ = newFileAtStartTime("force");
+        forceFilePtr_ = createFile("force");
         writeIntegratedDataFileHeader("Force", forceFilePtr_());
     }
 
-    if (!momentFilePtr_)
+    if (!momentFilePtr_.valid())
     {
-        momentFilePtr_ = newFileAtStartTime("moment");
+        momentFilePtr_ = createFile("moment");
         writeIntegratedDataFileHeader("Moment", momentFilePtr_());
     }
 }
@@ -433,16 +404,16 @@ void Foam::functionObjects::forceMultiphase::writeIntegratedDataFileHeader
     OFstream& os
 ) const
 {
-    // const auto& coordSys = coordSysPtr_();
+    //const auto& coordSys = coordSysPtr_();
     const auto vecDesc = [](const word& root)->string
     {
-        // return root + "_x " + root + "_y " + root + "_z";
-        return root + "_x " + tab + root + "_y " + tab + root + "_z";
+        //return root + "_x " + root + "_y " + root + "_z";
+         return root + "_x " + tab + root + "_y " + tab + root + "_z";
     };
     writeHeader(os, header);
-    // writeHeaderValue(os, "CofR", coordSys.origin());
-    // writeHeader(os, "");
-    // writeCommented(os, "Time");
+    //writeHeaderValue(os, "CofR", coordSys.origin());
+    //writeHeader(os, "");
+    //writeCommented(os, "Time");
     os<<"Time";
     writeTabbed(os, vecDesc("total"));
     writeTabbed(os, vecDesc("pressure"));
@@ -548,6 +519,7 @@ Foam::functionObjects::forceMultiphase::forceMultiphase
     forceFilePtr_(),
     momentFilePtr_(),
     coordSysPtr_(nullptr),
+    patchSet_(),
     rhoRef_(VGREAT),
     pRef_(0),
     pName_("p"),
@@ -589,6 +561,7 @@ Foam::functionObjects::forceMultiphase::forceMultiphase
     forceFilePtr_(),
     momentFilePtr_(),
     coordSysPtr_(nullptr),
+    patchSet_(),
     rhoRef_(VGREAT),
     pRef_(0),
     pName_("p"),
@@ -618,11 +591,8 @@ Foam::scalar Foam::functionObjects::forceMultiphase::patchArea() const
     return patchArea_;
 }
 
-
 bool Foam::functionObjects::forceMultiphase::read(const dictionary& dict)
 {
-    const polyBoundaryMesh& pbm = mesh_.boundaryMesh();
-
     if (!fvMeshFunctionObject::read(dict) || !writeFile::read(dict))
     {
         return false;
@@ -630,10 +600,13 @@ bool Foam::functionObjects::forceMultiphase::read(const dictionary& dict)
 
     initialised_ = false;
 
-    Info<< type() << ' ' << name() << ':' << endl;
+    Info<< type() << " " << name() << ":" << endl;
 
-    // Can also use pbm.indices(), but no warnings...
-    patchIDs_ = pbm.patchSet(dict.get<wordRes>("patches")).sortedToc();
+    patchSet_ =
+        mesh_.boundaryMesh().patchSet
+        (
+            dict.get<wordRes>("patches")
+        );
 
     dict.readIfPresent("directForceDensity", directForceDensity_);
     if (directForceDensity_)
@@ -710,27 +683,28 @@ void Foam::functionObjects::forceMultiphase::calcForcesMoments()
     if (directForceDensity_)
     {
         const auto& fD = lookupObject<volVectorField>(fDName_);
-        const auto& fDb = fD.boundaryField();
 
         const auto& Sfb = mesh_.Sf().boundaryField();
-        const auto& magSfb = mesh_.magSf().boundaryField();
-        const auto& Cb = mesh_.C().boundaryField();
 
-        for (const label patchi : patchIDs_)
+        for (const label patchi : patchSet_)
         {
-            const vectorField Md(Cb[patchi] - origin);
+            const vectorField& d = mesh_.C().boundaryField()[patchi];
+
+            const vectorField Md(d - origin);
+
+            const scalarField sA(mag(Sfb[patchi]));
 
             // Pressure force = surfaceUnitNormal*(surfaceNormal & forceDensity)
             const vectorField fP
             (
-                Sfb[patchi]/magSfb[patchi]
+                Sfb[patchi]/sA
                *(
-                    Sfb[patchi] & fDb[patchi]
+                    Sfb[patchi] & fD.boundaryField()[patchi]
                 )
             );
 
             // Viscous force (total force minus pressure fP)
-            const vectorField fV(magSfb[patchi]*fDb[patchi] - fP);
+            const vectorField fV(sA*fD.boundaryField()[patchi] - fP);
 
             addToPatchFields(patchi, Md, fP, fV);
         }
@@ -738,15 +712,11 @@ void Foam::functionObjects::forceMultiphase::calcForcesMoments()
     else
     {
         const auto& p = lookupObject<volScalarField>(pName_);
-        const auto& pb = p.boundaryField();
 
         const auto& Sfb = mesh_.Sf().boundaryField();
-        const auto& Cb = mesh_.C().boundaryField();
 
-        const auto& U = lookupObject<volVectorField>(UName_);
-        tmp<volTensorField> tgradU = fvc::grad(U);
-        const volTensorField& gradU = tgradU();
-        const auto& gradUb = gradU.boundaryField();
+        tmp<volSymmTensorField> tdevRhoReff = devRhoReff();
+        const auto& devRhoReffb = tdevRhoReff().boundaryField();
 
         // Scale pRef by density for incompressible simulations
         const scalar rhoRef = rho(p);
@@ -755,16 +725,18 @@ void Foam::functionObjects::forceMultiphase::calcForcesMoments()
         patchArea_= 0.0;
         vector Vvsmall(vector::uniform(VSMALL));
 
-        for (const label patchi : patchIDs_)
+        for (const label patchi : patchSet_)
         {
-            const vectorField Md(Cb[patchi] - origin);
+            const vectorField& d = mesh_.C().boundaryField()[patchi];
 
-            vectorField fP(rhoRef*Sfb[patchi]*(pb[patchi] - pRef));
+            const vectorField Md(d - origin);
 
-            vectorField fV
+            vectorField fP
             (
-                Sfb[patchi] & devRhoReff(gradUb[patchi], patchi)
+                rhoRef*Sfb[patchi]*(p.boundaryField()[patchi] - pRef)
             );
+
+            vectorField fV(Sfb[patchi] & devRhoReffb[patchi]);
 
             if(mesh_.foundObject<volScalarField> ("alpha.water"))
             {
@@ -800,6 +772,7 @@ void Foam::functionObjects::forceMultiphase::calcForcesMoments()
                 }
 
             }
+
             addToPatchFields(patchi, Md, fP, fV);
         }
     }
@@ -810,10 +783,7 @@ void Foam::functionObjects::forceMultiphase::calcForcesMoments()
         const volScalarField rho(this->rho());
         const volScalarField mu(this->mu());
 
-        const UPtrList<const porosityModel> models
-        (
-            obr_.csorted<porosityModel>()
-        );
+        const auto models = obr_.lookupClass<porosityModel>();
 
         if (models.empty())
         {
@@ -823,10 +793,10 @@ void Foam::functionObjects::forceMultiphase::calcForcesMoments()
                 << endl;
         }
 
-        for (const porosityModel& mdl : models)
+        forAllConstIters(models, iter)
         {
             // Non-const access required if mesh is changing
-            auto& pm = const_cast<porosityModel&>(mdl);
+            auto& pm = const_cast<porosityModel&>(*iter());
 
             const vectorField fPTot(pm.force(U, rho, mu));
 
@@ -851,7 +821,7 @@ void Foam::functionObjects::forceMultiphase::calcForcesMoments()
     reduce(sumPatchMomentsV_, sumOp<vector>());
     reduce(sumInternalForces_, sumOp<vector>());
     reduce(sumInternalMoments_, sumOp<vector>());
-
+    
     reduce(patchArea_, sumOp<scalar>());
 }
 
