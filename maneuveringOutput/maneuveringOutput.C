@@ -1,29 +1,25 @@
 #include "maneuveringOutput.H"
-#include "IOstreams.H"
-
-
-// * * * * * * * * * * * * Base maneuveringOutput  * * * * * * * * * * * * //
 
 
 // * * * * * * * * * * * * * * * * Constructor * * * * * * * * * * * * * * * //
 
-maneuveringOutput::maneuveringOutput(const polyMesh &mesh, const dictionary &dict)
+Foam::maneuveringOutput::maneuveringOutput(const polyMesh &mesh, const dictionary &dict)
 : 
     mesh_(mesh),
-    maneuveringInput_(maneuveringInput::create(dict)),
-    controlMethod_(controlMethod::create(dict)),
+    maneuveringInput_(Foam::maneuvering::maneuveringInput::New(dict)),
+    controlMethod_(Foam::maneuvering::controlMethod::New(dict)),
     timeIndex_(mesh.time().timeIndex())
 {}
 
 
 // * * * * * * * * * * * * Public Member Functions  * * * * * * * * * * * * *//
 
-scalar maneuveringOutput::output(const vector2D& input)
+scalar Foam::maneuveringOutput::output(const vector2D& input)
 {
     // Get time data
     const scalar deltaT = mesh_.time().deltaTValue();
     const scalar t = mesh_.time().timeOutputValue();
-    if(t <  controlMethod_->cStartTime() || t > controlMethod_->cEndTime())
+    if(t <  controlMethod_.get()->cStartTime() || t > controlMethod_.get()->cEndTime())
     {
        return 0.0; 
     }
@@ -34,9 +30,10 @@ scalar maneuveringOutput::output(const vector2D& input)
         timeIndex_ = mesh_.time().timeIndex();
     }
     //- acquire input value
-    const scalar inputValue = input[maneuveringInput_->inputTypeValue()];
+    const scalar inputValue = input[maneuveringInput_.get()->inputTypeValue()];
         
-    const scalar outputSignal = controlMethod_->calculate(inputValue, deltaT);
+    const scalar outputSignal = controlMethod_.get()->calculate(inputValue, deltaT);
+    
 
     //Info << "maneuveringOutput: targetValue = " << targetValue_->value(t) << endl;
     Info << "maneuveringOutput: input value = " << inputValue << endl;
@@ -46,25 +43,25 @@ scalar maneuveringOutput::output(const vector2D& input)
     return outputSignal;
 }
 
-void maneuveringOutput::write(Ostream& os) const
+void Foam::maneuveringOutput::write(Ostream& os) const
 {
 
 
 }
 
-void maneuveringOutput::write(dictionary& dict) const
+void Foam::maneuveringOutput::write(dictionary& dict) const
 {
 
-    dictionary& enDict =dict.subDictOrAdd(controlMethod_->controlName());
-    maneuveringInput_->write(enDict);
-    controlMethod_->write(enDict);
+    dictionary& enDict = dict.subDictOrAdd(controlMethod_.get()->controlName());
+    maneuveringInput_.get()->write(enDict);
+    controlMethod_.get()->write(enDict);
 
 }
 
 
-const std::shared_ptr<maneuveringInput> maneuveringOutput::mInput()
+const Foam::maneuvering::maneuveringInput& maneuveringOutput::mInput() const
 {
-    return maneuveringInput_;
+    return maneuveringInput_();
 }
 
 

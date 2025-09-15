@@ -492,6 +492,7 @@ const vector2D Foam::rigidBodyMeshMotion::acquireInput(const word& refBody, cons
 
 }
 
+
 void Foam::rigidBodyMeshMotion::actControl(const word& actBody, const word& refBody, const label& controlType, const scalar& output)
 {
     label positionDof = 0;
@@ -635,10 +636,11 @@ void Foam::rigidBodyMeshMotion::solve()
 
         forAll(maneuveringOutput_, bi)
         {
-            const word refBody = maneuveringOutput_[bi].mInput()->refBody();
-            const word actBody = maneuveringOutput_[bi].mInput()->actBody();
-            const label controlType = maneuveringOutput_[bi].mInput()->controlType();
+            const word refBody = maneuveringOutput_[bi].mInput().refBody();
+            const word actBody = maneuveringOutput_[bi].mInput().actBody();
+            const label controlType = maneuveringOutput_[bi].mInput().controlType();
             const scalar output = maneuveringOutput_[bi].output(this->acquireInput(refBody, controlType));
+            
             bool meshFlag = true;
             for(label i = 0; i < model_.nBodies(); i++)
             {

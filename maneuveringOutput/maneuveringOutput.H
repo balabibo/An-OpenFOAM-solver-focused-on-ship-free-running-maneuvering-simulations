@@ -48,10 +48,14 @@ Usage
 #include "fvCFD.H"
 #include "maneuveringInput.H"
 #include "controlMethod.H"
+#include "autoPtr.H"
 
-//- Class defining different sorts of maneuvering motions
+namespace Foam
+{
+
 class maneuveringOutput
 {
+
 public:
     maneuveringOutput() = delete;
     ~maneuveringOutput() = default;
@@ -74,7 +78,8 @@ public:
     void write(dictionary& dict) const;
 
     //- reture shared_ptr pointing Input
-    const std::shared_ptr<maneuveringInput> mInput();
+    // const std::shared_ptr<maneuveringInput> mInput();
+    const Foam::maneuvering::maneuveringInput& mInput() const;
 
 private:
 
@@ -82,16 +87,18 @@ private:
     const polyMesh &mesh_;
 
     //- List of references of maneuvering controller
-    const std::shared_ptr<maneuveringInput> maneuveringInput_;
+    // const std::shared_ptr<maneuveringInput> maneuveringInput_;
+    const autoPtr<Foam::maneuvering::maneuveringInput> maneuveringInput_;
     
     //- List of control algorithms
-    std::shared_ptr<controlMethod> controlMethod_;
+    // std::shared_ptr<controlMethod> controlMethod_;
+    const autoPtr<Foam::maneuvering::controlMethod> controlMethod_;
 
     //- Time index of present update
     label timeIndex_;
 };
 
-
+}
 
 #endif
 

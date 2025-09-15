@@ -1,91 +1,85 @@
 #include "controlMethod.H"
 
-// * * * * * * * * * * * * Utility function  * * * * * * * * * * * * //
+//---------------------------------------------------------------------------*/
 
-
-
-// * * * * * * * * * * * * Factory  * * * * * * * * * * * * //
-const Foam::Enum
-<
-controlMethod::controlType
->
-controlMethod::controlTypeNames
-({
-        {controlType::sailing, "sailing"},
-        {controlType::turning, "turning"},
-        {controlType::zigzag, "zigzag"},
-        {controlType::coursekeeping, "coursekeeping"},
-});
-
-std::shared_ptr<controlMethod>
-controlMethod::create(const dictionary &dict)
+namespace Foam
 {
-    const controlType type = controlTypeNames.get(dict.get<word>("type"));
+namespace maneuvering
+{
+    defineTypeNameAndDebug(controlMethod, 0);
+    defineRunTimeSelectionTable(controlMethod, dictionary);
 
-    switch (type)
-    {
-    case sailing:
-        return std::make_shared<sailingControl>(dict);
-    case turning:
-        return std::make_shared<turningControl>(dict);
-    case zigzag:
-        return std::make_shared<zigzagControl>(dict);
-    case coursekeeping:
-        return std::make_shared<coursekeepingControl>(dict);           
-    default:
-        FatalIOErrorInFunction(dict)
-            << "    Unknown control method " << type
-            << exit(FatalIOError);
-        return nullptr;
-    }
+    defineTypeNameAndDebug(turningControl, 0);
+    addToRunTimeSelectionTable
+    (
+        controlMethod,
+        turningControl,
+        dictionary
+    );
+
+    defineTypeNameAndDebug(zigzagControl, 0);
+    addToRunTimeSelectionTable
+    (
+        controlMethod,
+        zigzagControl,
+        dictionary
+    );
+
+    defineTypeNameAndDebug(sailingControl, 0);
+    addToRunTimeSelectionTable
+    (
+        controlMethod,
+        sailingControl,
+        dictionary
+    );
+
+    defineTypeNameAndDebug(coursekeepingControl, 0);
+    addToRunTimeSelectionTable
+    (
+        controlMethod,
+        coursekeepingControl,
+        dictionary
+    );    
+}
 }
 
-// * * * * * * * * * * * * Constructor  * * * * * * * * * * * * //
-controlMethod::controlMethod(const dictionary &dict)
+// * * * * * * * * * * * * base  * * * * * * * * * * * * //
+Foam::maneuvering::controlMethod::controlMethod(const dictionary &dict)
 : 
-  controlType_
-  (
-    controlTypeNames.get(dict.get<word>("type"))
-  ),
-  cStartTime_(dict.getOrDefault<scalar>("controllerStartTime", 0.)),
-  cEndTime_(dict.getOrDefault<scalar>("controllerEndTime", 10000.)),
-  controlName_(dict.dictName())
+    controlType_(dict.get<word>("type")),
+    cStartTime_(dict.getOrDefault<scalar>("controllerStartTime", 0.)),
+    cEndTime_(dict.getOrDefault<scalar>("controllerEndTime", 10000.)),
+    controlName_(dict.dictName())
 {}
 
-void controlMethod::write(Ostream &os) const
+void Foam::maneuvering::controlMethod::write(Ostream &os) const
 {
-    os.writeEntry("maneuveringMode", controlTypeNames.get(controlType_));
+    os.writeEntry("maneuveringMode", controlType_);
 }
 
-// * * * * * * * * * * * * member function  * * * * * * * * * * * * //
-void controlMethod::write(dictionary& dict) const
+void Foam::maneuvering::controlMethod::write(dictionary& dict) const
 {
     dict.add("controllerStartTime", cStartTime_);
     dict.add("controllerEndTime", cEndTime_);
 }
 
-scalar controlMethod::cStartTime() const
+scalar Foam::maneuvering::controlMethod::cStartTime() const
 {
     return cStartTime_;
 }
 
-scalar controlMethod::cEndTime() const
+scalar Foam::maneuvering::controlMethod::cEndTime() const
 {
     return cEndTime_;
 }
 
-enum controlMethod::controlType controlMethod::cType() const
-{
-    return controlType_;
-}
-
-const word controlMethod::controlName() const
+const word Foam::maneuvering::controlMethod::controlName() const
 {
     return controlName_;
 }
 
 // * * * * * * * * * * * * turning Control  * * * * * * * * * * * * //
-turningControl::turningControl(const dictionary &dict)
+Foam::maneuvering::turningControl::turningControl(const dictionary &dict)
 : 
     controlMethod(dict),
     cTarget_(dict.getOrDefault<scalar>("controllerYawAngle", 270.)),
@@ -94,7 +88,7 @@ turningControl::turningControl(const dictionary &dict)
     outputSignal_(dict.getOrDefault<scalar>("outputSignal", 0.))
 {}
 
-scalar turningControl::calculate(scalar currentYaw, const scalar deltaT)
+scalar Foam::maneuvering::turningControl::calculate(scalar currentYaw, const scalar deltaT) const
 {
     Info<<nl<<"turningControl is running!!"<<nl;
 
@@ -109,7 +103,7 @@ scalar turningControl::calculate(scalar currentYaw, const scalar deltaT)
     return cRate_*M_PI/180;
 }
 
-void turningControl::write(Ostream &os) const
+void Foam::maneuvering::turningControl::write(Ostream &os) const
 {
     controlMethod::write(os);
     os.beginBlock("parameters");
@@ -117,7 +111,7 @@ void turningControl::write(Ostream &os) const
     os.endBlock();
 }
 
-void turningControl::write(dictionary& dict) const
+void Foam::maneuvering::turningControl::write(dictionary& dict) const
 {
     controlMethod::write(dict);
     dict.add("controllerYawAngle", cTarget_);
@@ -128,7 +122,7 @@ void turningControl::write(dictionary& dict) const
 }
 
 // * * * * * * * * * * * * zigzag Control  * * * * * * * * * * * * //
-zigzagControl::zigzagControl(const dictionary &dict)
+Foam::maneuvering::zigzagControl::zigzagControl(const dictionary &dict)
 : 
     controlMethod(dict),
     cTarget_(dict.getOrDefault<scalar>("controllerYawAngle", 20.)),
@@ -140,7 +134,7 @@ zigzagControl::zigzagControl(const dictionary &dict)
  
 }
 
-scalar zigzagControl::calculate(scalar currentYaw, const scalar deltaT)
+scalar Foam::maneuvering::zigzagControl::calculate(scalar currentYaw, const scalar deltaT) const
 {
     Info<<nl<<"zigzagControl is running!!"<<nl;
     if
@@ -180,7 +174,7 @@ scalar zigzagControl::calculate(scalar currentYaw, const scalar deltaT)
     return cRate_*M_PI/180;
 }
 
-void zigzagControl::write(Ostream &os) const
+void Foam::maneuvering::zigzagControl::write(Ostream &os) const
 {
     controlMethod::write(os);
     os.beginBlock("parameters");
@@ -188,7 +182,7 @@ void zigzagControl::write(Ostream &os) const
     os.endBlock();
 }
 
-void zigzagControl::write(dictionary& dict) const
+void Foam::maneuvering::zigzagControl::write(dictionary& dict) const
 {
     controlMethod::write(dict);
     dict.add("controllerYawAngle", cTarget_);
@@ -200,7 +194,7 @@ void zigzagControl::write(dictionary& dict) const
 }
 
 // * * * * * * * * * * * * sailing Control  * * * * * * * * * * * * //
-sailingControl::sailingControl(const dictionary &dict)
+Foam::maneuvering::sailingControl::sailingControl(const dictionary &dict)
 : 
     controlMethod(dict),
     P_(dict.getOrDefault<scalar>("controllerP", 1.)),
@@ -221,7 +215,7 @@ sailingControl::sailingControl(const dictionary &dict)
     <<"outputSignal: "<<outputSignal_<<endl;
 }
 
-scalar sailingControl::calculate(scalar currentV, scalar deltaT)
+scalar Foam::maneuvering::sailingControl::calculate(scalar currentV, scalar deltaT) const
 {
     Info<<nl<<"sailingControl is running!!"<<nl;
     Info<<nl<<"errorIntegral: "<<errorIntegral_<<endl;
@@ -241,7 +235,7 @@ scalar sailingControl::calculate(scalar currentV, scalar deltaT)
     return max(min(outputSignal_, outputMax_), outputMin_);
 }
 
-void sailingControl::write(Ostream &os) const
+void Foam::maneuvering::sailingControl::write(Ostream &os) const
 {
     controlMethod::write(os);
     os.beginBlock("parameters");
@@ -255,7 +249,7 @@ void sailingControl::write(Ostream &os) const
     os.endBlock();
 }
 
-void sailingControl::write(dictionary& dict) const
+void Foam::maneuvering::sailingControl::write(dictionary& dict) const
 {
     controlMethod::write(dict);
     dict.add("controllerP", P_);
@@ -270,7 +264,7 @@ void sailingControl::write(dictionary& dict) const
 }
 
 // * * * * * * * * * * * * coursekeeping Control  * * * * * * * * * * * * //
-coursekeepingControl::coursekeepingControl(const dictionary &dict)
+Foam::maneuvering::coursekeepingControl::coursekeepingControl(const dictionary &dict)
 : 
     controlMethod(dict),
     P_(dict.getOrDefault<scalar>("controllerP", 1.)),
@@ -286,7 +280,7 @@ coursekeepingControl::coursekeepingControl(const dictionary &dict)
 
 {}
 
-scalar coursekeepingControl::calculate(scalar currentYaw, scalar deltaT)
+scalar Foam::maneuvering::coursekeepingControl::calculate(scalar currentYaw, scalar deltaT) const
 {
     Info<<nl<<"coursekeepingControl is running!!"<<nl;
     scalar error = currentYaw - cTarget_*M_PI/180;
@@ -319,7 +313,7 @@ scalar coursekeepingControl::calculate(scalar currentYaw, scalar deltaT)
     return presentRudderRate;
 }
 
-void coursekeepingControl::write(Ostream &os) const
+void Foam::maneuvering::coursekeepingControl::write(Ostream &os) const
 {
     controlMethod::write(os);
     os.beginBlock("parameters");
@@ -333,7 +327,7 @@ void coursekeepingControl::write(Ostream &os) const
     os.endBlock();
 }
 
-void coursekeepingControl::write(dictionary& dict) const
+void Foam::maneuvering::coursekeepingControl::write(dictionary& dict) const
 {
     controlMethod::write(dict);
     dict.add("controllerP", P_);
