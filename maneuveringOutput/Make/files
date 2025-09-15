@@ -1,5 +1,7 @@
-maneuveringInput.C
 controlMethod.C
+controlMethodNew.C
+maneuveringInput.C
+maneuveringInputNew.C
 maneuveringOutput.C
 
 LIB = $(FOAM_USER_LIBBIN)/libmaneuveringOutput
