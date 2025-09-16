@@ -11,6 +11,9 @@ restore0Dir
 
 touch case.foam
 
+cp ./system/controlDict.propulsion ./system/controlDict
+cp ./constant/dynamicMeshDict.propulsion ./constant/dynamicMeshDict
+
 runApplication -s 1 \
     mergeMeshes . ../hull -overwrite
 
@@ -28,17 +31,14 @@ runApplication -s 7 \
 
 runApplication decomposePar -force
 
-cp ./system/controlDict.propulsion controlDict
-cp ./constant/dynamicMeshDict.propulsion dynamicMeshDict
-
 mpirun -np 8 overInterDyMFoam -parallel | tee self.log
 
 rm ./system/controlDict
 
 rm ./constant/dynamicMeshDict
 
-cp ./system/controlDict.turning controlDict
-cp ./constant/dynamicMeshDict.turning dynamicMeshDict
+cp ./system/controlDict.turning ./system/controlDict
+cp ./constant/dynamicMeshDict.turning ./constant/dynamicMeshDict
 
 cp maneuvers ./processor0/10/uniform
 
