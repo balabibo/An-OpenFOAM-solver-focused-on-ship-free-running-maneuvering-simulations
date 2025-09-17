@@ -189,7 +189,7 @@ solvers
                 controllerRudder  35;
                 controllerRate    35;
                 outputSignal     0;
-                controllerStartTime    100;
+                controllerStartTime    0;
                 controllerEndTime   1000;
             }      
            
